@@ -1,0 +1,33 @@
+server:
+  port: ${services.ports.auth}
+
+spring:
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: auth_db
+
+  
+  datasource:
+    url: jdbc:postgresql://localhost:5432/thread_auth_db
+    username: postgres
+    password: 1012
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  spring:
+    security:
+      oauth2:
+        # Resource server qismi klientlar uchun,
+        # lekin Auth serverning o'zi uchun quyidagilar shart:
+        authorization-server:
+          issuer: http://localhost:8085
+        resource-server:
+          jwt:
+            jwk-set-uri: http://localhost:8085/oauth2/jwks
+            issuer-uri: http://localhost:8085

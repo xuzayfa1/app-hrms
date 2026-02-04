@@ -32,7 +32,6 @@ class DevUserLoader(
             logger.info("Creating dev user...")
 
             val devUser = User(
-                fullName = username,
                 username = username,
                 password = passwordEncoder.encode("DeV#2025"),
                 role = Role.DEVELOPER

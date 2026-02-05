@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: file
+  cloud:
+    config:
+      uri: ${CONFIG_URI:http://localhost:8888}
+      password: ${CONFIG_PASSWORD:nimadirxavfsizlik}
+      username: user
+  config:
+    import: 'configserver:'
+  profiles:
+    active: local
+
+  servlet:
+    multipart:
+      max-request-size: 100MB
+      max-file-size: 100MB

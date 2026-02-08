@@ -61,7 +61,7 @@ class EmployeeServiceImpl(
         val organization = organizationRepository.findByIdAndDeletedFalse(request.organizationId)
             ?: throw OrganizationNotFoundException("Organization not found with id: ${request.organizationId}")
 
-        if (employeeRepository.existsByUserIdAndOrganizationId(request.userId, request.organizationId)) {
+        if (employeeRepository.existsByUserIdAndOrganizationIdAndDeletedFalse(request.userId, request.organizationId)) {
             throw EmployeeAlreadyExistsException(
                 "User ${request.userId} is already assigned to organization ${request.organizationId}"
             )

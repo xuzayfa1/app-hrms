@@ -3,6 +3,14 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/app-hrms.iml" filepath="$PROJECT_DIR$/app-hrms.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/auth.main.iml" filepath="$PROJECT_DIR$/.idea/modules/auth.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/auth.test.iml" filepath="$PROJECT_DIR$/.idea/modules/auth.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/config.main.iml" filepath="$PROJECT_DIR$/.idea/modules/config.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/config.test.iml" filepath="$PROJECT_DIR$/.idea/modules/config.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/gateway.main.iml" filepath="$PROJECT_DIR$/.idea/modules/gateway.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/gateway.test.iml" filepath="$PROJECT_DIR$/.idea/modules/gateway.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/task.main.iml" filepath="$PROJECT_DIR$/.idea/modules/task.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/task.test.iml" filepath="$PROJECT_DIR$/.idea/modules/task.test.iml" />
     </modules>
   </component>
 </project>

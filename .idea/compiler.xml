@@ -1,10 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel>
+      <module name="auth.main" target="17" />
+      <module name="auth.test" target="17" />
+      <module name="config.main" target="17" />
+      <module name="config.test" target="17" />
+      <module name="gateway.main" target="17" />
+      <module name="gateway.test" target="17" />
+      <module name="task.main" target="17" />
+      <module name="task.test" target="17" />
+    </bytecodeTargetLevel>
+  </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="auth" options="-parameters" />
+      <module name="config" options="-parameters" />
       <module name="file" options="-parameters" />
       <module name="file.main" options="-parameters" />
       <module name="file.test" options="-parameters" />
+      <module name="gateway" options="-parameters" />
+      <module name="task" options="-parameters" />
+      <module name="user" options="-parameters" />
+      <module name="user.main" options="-parameters" />
+      <module name="user.test" options="-parameters" />
+      <module name="uz.task.main" options="-parameters" />
+      <module name="uz.task.test" options="-parameters" />
+      <module name="uz.zero.auth.main" options="-parameters" />
+      <module name="uz.zero.auth.test" options="-parameters" />
+      <module name="uz.zero.config.main" options="-parameters" />
+      <module name="uz.zero.config.test" options="-parameters" />
+      <module name="uz.zero.gateway.main" options="-parameters" />
+      <module name="uz.zero.gateway.test" options="-parameters" />
     </option>
   </component>
 </project>

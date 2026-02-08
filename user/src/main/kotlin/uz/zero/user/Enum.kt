@@ -1,0 +1,23 @@
+package uz.zero.user
+
+
+
+enum class ErrorCode(val code: Int) {
+    USER_NOT_FOUND(404),
+    USER_ALREADY_EXISTS(409),
+    ORGANIZATION_NOT_FOUND(404),
+    ORGANIZATION_ALREADY_EXISTS(409),
+    EMPLOYEE_NOT_FOUND(404),
+    EMPLOYEE_ALREADY_EXISTS(409),
+    INVALID_REQUEST(400),
+    UNAUTHORIZED(401),
+    FORBIDDEN(403),
+    INACTIVE_USER(400),
+    INACTIVE_ORGANIZATION(400)
+}
+
+enum class EmployeeRole {
+    ADMIN,
+    MANAGER,
+    EMPLOYEE
+}

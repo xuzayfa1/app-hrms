@@ -68,7 +68,6 @@ class Workflow(
 class State(
 
     @Column(nullable = false) var name: String,
-    @Column(nullable = false) var terminal: Boolean = false,
     @Column(nullable = false)var orderNumber: Long,
     @ManyToOne(fetch = FetchType.LAZY)var workflow: Workflow,
     @Enumerated(EnumType.STRING)var permission: Permission
@@ -85,7 +84,7 @@ class Task(
     @ManyToOne(fetch = FetchType.LAZY) var board: Board,
     @ManyToOne(fetch = FetchType.LAZY) var state: State,
     @Column(nullable = false) var ownerId:Long,
-    @Temporal(TemporalType.TIMESTAMP) var deadline: Date?,
+    @Temporal(TemporalType.TIMESTAMP) var deadline: Date? = null,
 ):BaseEntity()
 
 @Entity

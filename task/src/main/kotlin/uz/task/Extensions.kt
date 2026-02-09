@@ -54,13 +54,13 @@ fun employeeId(): Long {
     return getUserJwtPrincipal()?.claims?.get(EMPLOYEE_ID_KEY) as Long
 }
 
-fun employeePermission(): EmployeeRole {
-    return getUserJwtPrincipal()?.claims?.get(EMPLOYEE_PER_KEY) as EmployeeRole
+fun employeePosition(): EmployeeRole {
+    return getUserJwtPrincipal()?.claims?.get(EMPLOYEE_POS_KEY) as EmployeeRole
 }
 
 object Context {
     fun orgId(): Long = orgId()
     fun userId(): Long = userId()
     fun employeeId(): Long = employeeId()
-    fun employeePer(): EmployeeRole = employeePermission()
+    fun employeePos(): EmployeeRole = employeePosition()
 }

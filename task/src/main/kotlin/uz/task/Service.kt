@@ -17,14 +17,19 @@ interface ProjectService {
 
 @Service
 class ProjectServiceImpl(
-    private val projectRepository: ProjectRepository
+    private val projectRepository: ProjectRepository,
+    private val boardRepository: BoardRepository,
+    private val taskRepository: TaskRepository
 ) : ProjectService {
+
+
 
     @Transactional
     override fun create(req: CreateProjectRequest): ProjectResponse {
-        //todo bu yerda rolega ham tekshirish kerak
 
-        val orgId = Context.orgId()// id contexdan
+        Utils.checkPosition()
+
+        val orgId = Context.orgId() // id contexdan
 
         val project = Project(
             name = req.name.trim(),
@@ -37,7 +42,7 @@ class ProjectServiceImpl(
 
     @Transactional
     override fun update(req: UpdateProjectRequest): ProjectResponse {
-        //todo bu yerda rolega ham tekshirish kerak
+        Utils.checkPosition()
 
         val orgId = Context.orgId()
 
@@ -46,21 +51,30 @@ class ProjectServiceImpl(
         if (project.organizationId != orgId) throw AccessDeniedException()
 
         req.name?.let { project.name = it.trim() }
-        //TODO shu yerda agar tugamagan task bor bolsa tekshirishni yozish kerak
-        req.status?.let { project.status = it }
+        //TODO shu yerda agar tugamagan task yoki boshmas board bor bolsa tekshirishni yozish kerak-FIXED!
+        req.status?.let {
+            val hasBoard = boardRepository.existsByProjectIdAndDeletedFalse(req.id)
+            val hasTasks = taskRepository.existsOpenTasksByProjectId(req.id)
+            if (hasTasks || hasBoard) throw ProjectNotEmptyException()
+            project.status = it
+        }
 
         return ProjectResponse.toResponse(projectRepository.save(project))
     }
 
     @Transactional
     override fun delete(id: Long) {
-        //todo bu yerda rolega ham tekshirish kerak
+        Utils.checkPosition()
 
         val orgId = Context.orgId()
 
         val project = projectRepository.findByIdAndDeletedFalse(id) ?: throw ProjectNotFoundException()
 
         if (project.organizationId != orgId) throw AccessDeniedException()
+
+        val hasBoard = boardRepository.existsByProjectIdAndDeletedFalse(id)
+        val hasTasks = taskRepository.existsOpenTasksByProjectId(id)
+        if (hasTasks || hasBoard) throw ProjectNotEmptyException()
 
         projectRepository.trash(project.id!!)
     }
@@ -98,13 +112,15 @@ interface BoardService {
 @Service
 class BoardServiceImpl(
     private val boardRepository: BoardRepository,
-    private val projectRepository: ProjectRepository
+    private val projectRepository: ProjectRepository,
+    private val taskRepository: TaskRepository
 ) : BoardService {
 
     @Transactional
     override fun create(req: CreateBoardRequest): BoardResponse {
 
-        //todo bu yerda rolega ham tekshirish kerak
+        Utils.checkPosition()
+
         val orgId = Context.orgId()
 
         val project = projectRepository.findByIdAndDeletedFalse(req.projectId) ?: throw ProjectNotFoundException()
@@ -122,7 +138,7 @@ class BoardServiceImpl(
 
     @Transactional
     override fun update(req: UpdateBoardRequest): BoardResponse {
-        //todo bu yerda rolega ham tekshirish kerak
+        Utils.checkPosition()
 
         val orgId = Context.orgId()
 
@@ -131,20 +147,27 @@ class BoardServiceImpl(
         if (board.project.organizationId != orgId) throw AccessDeniedException()
 
         req.name?.let { board.name = it.trim() }
-        req.status?.let { board.status = it }
+        req.status?.let {
+            val hasTasks = taskRepository.existsOpenTasksByProjectId(req.id)
+            if (hasTasks) throw BoardNotEmptyException()
+            board.status = it
+        }
 
         return BoardResponse.toResponse(boardRepository.save(board))
     }
 
     @Transactional
     override fun delete(id: Long) {
-        //todo bu yerda rolega ham tekshirish kerak
+        Utils.checkPosition()
 
         val orgId = Context.orgId()
 
         val board = boardRepository.findByIdAndDeletedFalse(id) ?: throw BoardNotFoundException()
 
         if (board.project.organizationId != orgId) throw AccessDeniedException()
+
+        val hasTasks = taskRepository.existsOpenTasksByProjectId(id)
+        if (hasTasks) throw BoardNotEmptyException()
 
         boardRepository.trash(board.id!!)
     }
@@ -298,6 +321,8 @@ class StateServiceImpl(
         if (w.organizationId == null) throw SystemWorkflowReadonlyException()
         if (w.organizationId != orgId) throw AccessDeniedException()
 
+        if(workflowRepository.existsByWorkflowId(s.workflow.id!!)) throw StateInUseException()
+
         stateRepository.trash(s.id!!)
     }
 
@@ -357,6 +382,9 @@ class TaskServiceImpl(
         val workflowOrgId = state.workflow.organizationId ?: throw AccessDeniedException()
         if (workflowOrgId != orgId) throw AccessDeniedException()
 
+        val now = Date()
+        if (req.deadline != null && req.deadline.before(now)) throw DeadlineInPastException()
+
         val task = Task(
             title = req.title.trim(),
             description = req.description.trim(),
@@ -381,7 +409,11 @@ class TaskServiceImpl(
 
         req.title?.let { t.title = it.trim() }
         req.description?.let { t.description = it.trim() }
-        req.deadline?.let { t.deadline = it }
+        req.deadline?.let {
+            val now = Date()
+            if (req.deadline.before(now)) throw DeadlineInPastException()
+            t.deadline = it
+        }
 
         return TaskResponse.toResponse(taskRepository.save(t))
     }
@@ -418,10 +450,9 @@ class TaskServiceImpl(
             .map { TaskResponse.toResponse(it) }
     }
 
+
     @Transactional
     override fun changeState(req: ChangeTaskStateRequest): TaskResponse {
-
-
 
         val orgId = Context.orgId()
         val employeeId = Context.employeeId()
@@ -429,34 +460,75 @@ class TaskServiceImpl(
         val task = taskRepository.findByIdAndDeletedFalse(req.taskId) ?: throw TaskNotFoundException()
         if (task.board.project.organizationId != orgId) throw AccessDeniedException()
 
+        // deadline check
         val now = Date()
         if (task.deadline != null && now.after(task.deadline)) throw DeadlineExpiredException()
 
-
         val newState = stateRepository.findByIdAndDeletedFalse(req.stateId) ?: throw StateNotFoundException()
-        //yangi state workflowini tekshirish
+
         val newStateOrgId = newState.workflow.organizationId
         if (newStateOrgId != orgId) throw AccessDeniedException()
 
-        // workflow mosligiga tekshirish
         val currentWorkflowId = task.state.workflow.id
         val newWorkflowId = newState.workflow.id
         if (currentWorkflowId != null && newWorkflowId != null && currentWorkflowId != newWorkflowId) {
             throw InvalidStateWorkflowException()
         }
-        //kim otkazoladi
-        when (newState.permission) {
-            Permission.OWNER -> {
-                if (task.ownerId != employeeId) throw AccessDeniedException()
-            }
-            Permission.ASSIGNEE -> {
-                val exist = taskAssigneeRepository.existsByTaskIdAndEmployeeIdAndDeletedFalse(task.id!!, employeeId)
-                if (!exist && task.ownerId != employeeId()) throw AccessDeniedException()
-            }
+
+        val currentState = task.state
+
+        val isOwner = task.ownerId == employeeId
+        val isAssignee = taskAssigneeRepository.existsByTaskIdAndEmployeeIdAndDeletedFalse(task.id!!, employeeId)
+
+        //owner hohlagan statega otkazadi agar ozini ozi biriktirgan bolsa
+        if (isOwner && isAssignee) {
+            task.state = newState
+            return TaskResponse.toResponse(taskRepository.save(task))
         }
 
-        task.state = newState
-        return TaskResponse.toResponse(taskRepository.save(task))
+
+        val currentPer = currentState.permission
+        val targetPer = newState.permission
+
+        // assignee lar faqat step-by-step otadi qaytadi
+        fun requireStep() {
+            val step = kotlin.math.abs(newState.orderNumber - currentState.orderNumber)
+            if (step != 1L) throw AccessDeniedException()
+        }
+
+        //assignee
+        if (targetPer == Permission.ASSIGNEE) {
+            if (isAssignee) {
+                //check step
+                requireStep()
+                task.state = newState
+                return TaskResponse.toResponse(taskRepository.save(task))
+            }
+
+            if (isOwner) {
+                //admin faqat owner dan qaytaroladi
+                if (currentPer != Permission.OWNER) throw AccessDeniedException()
+                // order boyicha qaytarganda kichik bolishi kerak
+                if (newState.orderNumber >= currentState.orderNumber) throw AccessDeniedException()
+                task.state = newState
+                return TaskResponse.toResponse(taskRepository.save(task))
+            }
+
+            throw AccessDeniedException()
+        }
+
+        //owner
+        if (targetPer == Permission.OWNER) {
+            if (!isOwner) throw AccessDeniedException()
+
+            if (currentPer != Permission.OWNER) throw AccessDeniedException()
+
+
+            task.state = newState
+            return TaskResponse.toResponse(taskRepository.save(task))
+        }
+
+        throw AccessDeniedException()
     }
 
     @Transactional(readOnly = true)

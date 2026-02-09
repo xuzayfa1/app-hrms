@@ -3,9 +3,10 @@ spring:
     name: task
   cloud:
     config:
-      uri: http://localhost:8888
+      uri: ${CONFIG_URI:http://localhost:8888}
+      password: ${CONFIG_PASSWORD:nimadirxavfsizlik}
+      username: user
   config:
     import: 'configserver:'
-
   profiles:
     active: local

@@ -3,16 +3,13 @@ package uz.task
 import java.security.Principal
 import kotlin.jvm.java
 
-const val SYSTEM_NAME = "OPEN_BANKING"
-const val BASE_API_VERSION = "/api/v1"
-const val HUMO_CHECK_CARD_OWNERSHIP_RESULT = "Yes"
-const val HUMO_CHECK_SMS_STATE = "on"
+
 const val USER_ID_KEY = "uid"
 const val USERNAME_KEY = "sub"
 
 const val ORG_ID_KEY = "oid"
 const val EMPLOYEE_ID_KEY = "eid"
-const val EMPLOYEE_PER_KEY = "per"
+const val EMPLOYEE_POS_KEY = "pos"
 
 const val ROLE_KEY = "rol"
 const val ROLE_LEVEL_KEY = "roll"

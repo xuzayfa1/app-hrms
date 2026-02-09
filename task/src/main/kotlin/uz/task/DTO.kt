@@ -105,7 +105,6 @@ data class StateResponse(
     val id: Long,
     val workflowId: Long,
     val name: String,
-    val terminal: Boolean,
     val orderNumber: Long,
     val permission: Permission
 ) {
@@ -114,7 +113,6 @@ data class StateResponse(
             id = s.id!!,
             workflowId = s.workflow.id!!,
             name = s.name,
-            terminal = s.terminal,
             orderNumber = s.orderNumber,
             permission = s.permission
         )
@@ -126,7 +124,7 @@ data class CreateTaskRequest(
     val stateId: Long,
     val title: String,
     val description: String,
-    val deadline: Date,
+    val deadline: Date? = null,
 )
 
 data class UpdateTaskRequest(

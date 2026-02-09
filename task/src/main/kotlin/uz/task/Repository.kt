@@ -54,6 +54,7 @@ interface ProjectRepository : BaseRepository<Project>{
 interface BoardRepository : BaseRepository<Board> {
 
     fun findAllByProjectId(projectId: Long, pageable: Pageable): Page<Board>
+    fun existsByProjectIdAndDeletedFalse(id: Long): Boolean
 
 }
 
@@ -63,11 +64,18 @@ interface WorkflowRepository : BaseRepository<Workflow> {
         where w.deleted = false and (w.organizationId = :orgId or w.organizationId is null)
     """)
     fun findAllByOrgId(@Param("orgId") orgId: Long, pageable: Pageable): Page<Workflow>
+
+    @Query("""
+    select count(t) > 0
+    from Task t
+    where t.deleted = false
+      and t.state.workflow.id = :workflowId
+""")
+    fun existsByWorkflowId(@Param("workflowId") workflowId: Long): Boolean
 }
 
 interface StateRepository : BaseRepository<State> {
     fun findAllByWorkflowIdAndDeletedFalse(workflowId: Long, pageable: Pageable): Page<State>
-    fun findFirstByWorkflowIdAndDeletedFalseOrderByOrderNumberAsc(workflowId: Long): State?
 }
 
 interface TaskRepository : BaseRepository<Task> {
@@ -87,6 +95,15 @@ interface TaskRepository : BaseRepository<Task> {
         @Param("employeeId") employeeId: Long,
         pageable: Pageable
     ): Page<Task>
+
+    @Query("""
+        select count(t) > 0
+        from Task t
+        join t.board b
+        where (b.project.id = :projectId or t.board.id = :projectId)
+          and t.deleted = false
+    """)
+    fun existsOpenTasksByProjectId(@Param("projectId") projectId: Long): Boolean
 }
 
 interface TaskAssigneeRepository : BaseRepository<TaskAssignee> {

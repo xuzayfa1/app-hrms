@@ -93,6 +93,22 @@ class DeadlineExpiredException : TaskException() {
     override fun errorType() = ErrorCode.DEADLINE_EXPIRED
 }
 
+class ProjectNotEmptyException : TaskException() {
+    override fun errorType() = ErrorCode.PROJECT_NOT_EMPTY
+}
+
+class BoardNotEmptyException : TaskException() {
+    override fun errorType() = ErrorCode.BOARD_NOT_EMPTY
+}
+
+class DeadlineInPastException : TaskException() {
+    override fun errorType() = ErrorCode.DEADLINE_IN_PAST
+}
+
+class StateInUseException : TaskException() {
+    override fun errorType() = ErrorCode.STATE_IN_USE
+}
+
 
 
 class FeignException(

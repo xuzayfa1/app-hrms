@@ -13,16 +13,19 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import uz.zero.user.EmployeeRole
 import uz.zero.user.UserAuthDto
 import uz.zero.user.UserCreateRequest
 import uz.zero.user.UserResponse
-import uz.zero.user.services.UserService
 import uz.zero.user.UserUpdateRequest
+import uz.zero.user.services.EmployeeService
+import uz.zero.user.services.UserService
 
 @RestController
 @RequestMapping("/api/users")
 class UserController(
-    private val userService: UserService
+    private val userService: UserService,
+    private val employeeService: EmployeeService
 ) {
 
     @GetMapping("/details/{authUserId}")
@@ -31,24 +34,28 @@ class UserController(
     }
 
     @GetMapping
-    fun getAllUsers(): List<UserResponse> {
-        val users = userService.getAllUsers()
-        return users
+    fun getAllUsers(
+        @RequestHeader("X-User-Id", required = false) currentUserId: String?,
+        @RequestHeader("X-Org-Id", required = false) currentOrgId: String?
+    ): ResponseEntity<List<UserResponse>> {
+        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
+        }
+        return ResponseEntity.ok(userService.getAllUsers())
     }
 
     @GetMapping("/{id}")
     fun getUserById(@PathVariable id: Long): UserResponse {
-        val user = userService.getUserById(id)
-        return user
+        return userService.getUserById(id)
     }
 
     @PostMapping
     fun createUser(
         @Valid @RequestBody request: UserCreateRequest,
-        @RequestHeader("X-User-Role", required = false) userRole: String?
+        @RequestHeader("X-User-Id", required = false) currentUserId: String?,
+        @RequestHeader("X-Org-Id", required = false) currentOrgId: String?
     ): ResponseEntity<UserResponse> {
-        // Only ADMIN can create users
-        if (userRole != "ADMIN") {
+        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
         }
 
@@ -60,11 +67,14 @@ class UserController(
     fun updateUser(
         @PathVariable id: Long,
         @Valid @RequestBody request: UserUpdateRequest,
-        @RequestHeader("X-User-Role", required = false) userRole: String?,
-        @RequestHeader("X-User-Id", required = false) currentUserId: String?
+        @RequestHeader("X-User-Id", required = false) currentUserId: String?,
+        @RequestHeader("X-Org-Id", required = false) currentOrgId: String?
     ): ResponseEntity<UserResponse> {
-        // ADMIN can update any user, regular users can only update themselves
-        if (userRole != "ADMIN" && currentUserId != id.toString()) {
+        val userId = currentUserId?.toLongOrNull()
+            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+
+        val isAdmin = hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)
+        if (!isAdmin && userId != id) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
         }
 
@@ -75,10 +85,10 @@ class UserController(
     @DeleteMapping("/{id}")
     fun deleteUser(
         @PathVariable id: Long,
-        @RequestHeader("X-User-Role", required = false) userRole: String?
+        @RequestHeader("X-User-Id", required = false) currentUserId: String?,
+        @RequestHeader("X-Org-Id", required = false) currentOrgId: String?
     ): ResponseEntity<Void> {
-        // Only ADMIN can delete users
-        if (userRole != "ADMIN") {
+        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
         }
 
@@ -89,9 +99,15 @@ class UserController(
     @PatchMapping("/switch-organization/{orgId}")
     fun switchOrg(
         @PathVariable orgId: Long,
-        @RequestHeader("X-User-Id") currentUserId: String,
-    ): UserResponse{
-        val updateUser = userService.switchOrganization(currentUserId.toLong(),orgId)
-        return updateUser
+        @RequestHeader("X-User-Id") currentUserId: String
+    ): UserResponse {
+        return userService.switchOrganization(currentUserId.toLong(), orgId)
+    }
+
+    private fun hasRole(userId: String?, orgId: String?, role: EmployeeRole): Boolean {
+        val uid = userId?.toLongOrNull() ?: return false
+        val oid = orgId?.toLongOrNull() ?: return false
+        val currentRole = employeeService.getUserRoleInOrg(uid, oid) ?: return false
+        return currentRole == role
     }
 }

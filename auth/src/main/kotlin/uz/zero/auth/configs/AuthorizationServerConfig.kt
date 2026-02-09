@@ -107,8 +107,8 @@ class AuthorizationServerConfig {
                     context.claims.claim(JWT_USER_ID_KEY, principal.getUserId())
                     context.claims.claim(JWT_ROLE_KEY, principal.getRole())
                     context.claims.claim(ORG_ID_KEY, principal.getCurrentOrganizationId())
-                    context.claims.claim(EMPLOYEE_ID_KEY, principal.getCurrentOrganizationId())
-                    context.claims.claim(EMPLOYEE_POS_KEY, principal.getCurrentOrganizationId())
+                    context.claims.claim(EMPLOYEE_ID_KEY, principal.getEmployeeId())
+                    context.claims.claim(EMPLOYEE_POS_KEY, principal.getEmployeeRole())
                 }
             }
         }

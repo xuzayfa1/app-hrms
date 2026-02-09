@@ -57,6 +57,9 @@ interface UserRepository : BaseRepository<User> {
     fun findAllActive(): List<User>
 
     fun findByAuthUserIdAndDeletedFalse(authUserId: Long): Optional<User>
+
+    @Query("SELECT u FROM User u WHERE u.username = :username AND u.deleted = false")
+    fun findByUsernameAndDeletedFalse(username: String): User?
 }
 
 interface OrganizationRepository : BaseRepository<Organization> {

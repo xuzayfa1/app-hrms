@@ -1,6 +1,7 @@
 package uz.zero.user.services
 
 import jakarta.transaction.Transactional
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import uz.zero.user.*
 
@@ -11,7 +12,7 @@ interface UserService {
     fun updateUser(id: Long, request: UserUpdateRequest): UserResponse
     fun deleteUser(id: Long)
     fun switchOrganization(userId: Long, orgId: Long): UserResponse
-    fun getUserAuthDetails(authUserId: Long): UserAuthDto
+    fun verifyUser(request: VerifyUserRequest): UserAuthDto
 }
 
 
@@ -19,12 +20,21 @@ interface UserService {
 class UserServiceImpl(
     private val userRepository: UserRepository,
     private val employeeRepository: EmployeeRepository,
-    private val authClient: AuthClient
+    private val passwordEncoder: PasswordEncoder
 ) : UserService {
 
-    override fun getUserAuthDetails(authUserId: Long): UserAuthDto {
-        val user = userRepository.findByAuthUserIdAndDeletedFalse(authUserId)
-            .orElseThrow { UserNotFoundException() }
+    @Transactional
+    override fun verifyUser(request: VerifyUserRequest): UserAuthDto {
+        val user = userRepository.findByUsernameAndDeletedFalse(request.username)
+            ?: throw UserNotFoundException("User not found")
+
+        if (!passwordEncoder.matches(request.password, user.password)) {
+            throw UnauthorizedException("Invalid password")
+        }
+
+        if (!user.isActive) {
+            throw InactiveUserException("User is not active")
+        }
 
         val currentOrgId = user.currentOrgId
 
@@ -35,11 +45,13 @@ class UserServiceImpl(
         }
 
         return UserAuthDto(
-            userId = user.id!!,
+            id = user.id!!,
             username = user.username,
-            currentOrgId = currentOrgId,
+            role = employee?.role?.name ?: "USER",
+            deleted = user.deleted,
             employeeId = employee?.id,
-            role = employee?.role?.name ?: "USER"
+            employeeRole = employee?.role?.name,
+            currentOrganizationId = currentOrgId
         )
     }
 
@@ -79,14 +91,13 @@ class UserServiceImpl(
         if (userRepository.existsByEmail(request.email)) {
             throw UserAlreadyExistsException("Email already exists: ${request.email}")
         }
-        val authResponse = authClient.registerInAuth(AuthRegisterRequest(request.username, request.password, "USER"))
 
         val user = User(
             username = request.username,
+            password = passwordEncoder.encode(request.password),
             email = request.email,
             firstName = request.firstName,
-            lastName = request.lastName,
-            authUserId = authResponse.id
+            lastName = request.lastName
         )
 
         val savedUser = userRepository.save(user)

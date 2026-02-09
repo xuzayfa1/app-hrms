@@ -31,10 +31,10 @@ open class BaseEntity(
 @Entity
 class User(
     var username: String,
+    var password: String,
     var email: String,
     var firstName: String,
     var lastName: String,
-    var authUserId: Long? = null,
     var currentOrgId: Long? = null
 ) : BaseEntity()
 

@@ -56,10 +56,25 @@ class SecurityConfig {
                     val details = auth.details
                     if (details is Map<*, *> && details.keys.all { it is String }) {
                         val mutatedRequest = exchange.request.mutate()
+
+                        // JSON formatida barcha ma'lumotlarni yuborish (siqilgan holda)
                         val detailsJson = objectMapper.writeValueAsString(details).compress()
                         mutatedRequest.header(USER_DETAILS_HEADER_KEY, detailsJson)
+
+                        // Alohida headerlar sifatida chiqarish
+                        mutatedRequest.header(USER_ID_HEADER_KEY, details[USER_ID_KEY]?.toString() ?: "")
+                        mutatedRequest.header(USER_NAME_HEADER_KEY, details[USER_USERNAME_KEY]?.toString() ?: "")
+
+                        // --- YANGI QISM: Org-Id ni qo'shamiz ---
+                        val orgId = details[USER_ORG_ID_KEY]?.toString() ?: ""
+                        mutatedRequest.header(USER_ORG_ID_HEADER_KEY, orgId)
+
+                        // Exchange attributes (logging yoki boshqa filtrlar uchun)
                         exchange.attributes[USER_ID_HEADER_KEY] = details[USER_ID_KEY]
                         exchange.attributes[USER_NAME_HEADER_KEY] = details[USER_USERNAME_KEY]
+                        exchange.attributes[USER_ORG_ID_HEADER_KEY] = orgId
+                        // ---------------------------------------
+
                         val newExchange = exchange.mutate().request(mutatedRequest.build()).build()
                         return@flatMap chain.filter(newExchange)
                     } else {

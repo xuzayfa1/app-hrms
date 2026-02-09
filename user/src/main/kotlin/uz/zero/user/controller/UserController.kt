@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import uz.zero.user.EmployeeRole
-import uz.zero.user.UserAuthDto
 import uz.zero.user.UserCreateRequest
 import uz.zero.user.UserResponse
 import uz.zero.user.UserUpdateRequest
@@ -27,11 +26,6 @@ class UserController(
     private val userService: UserService,
     private val employeeService: EmployeeService
 ) {
-
-    @GetMapping("/details/{authUserId}")
-    fun getUserDetailsForAuth(@PathVariable authUserId: Long): UserAuthDto {
-        return userService.getUserAuthDetails(authUserId)
-    }
 
     @GetMapping
     fun getAllUsers(

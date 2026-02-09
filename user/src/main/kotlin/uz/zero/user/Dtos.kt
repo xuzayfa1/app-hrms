@@ -8,22 +8,19 @@ data class BaseMessage(
     val message: String?
 )
 
-data class AuthRegisterRequest(
+data class VerifyUserRequest(
     val username: String,
-    val password: String,
-    val role: String
-)
-
-data class AuthUserResponse(
-    val id: Long
+    val password: String
 )
 
 data class UserAuthDto(
-    val userId: Long,
+    val id: Long,
     val username: String,
-    val currentOrgId: Long?,
+    val role: String,
+    val deleted: Boolean,
     val employeeId: Long?,
-    val role: String
+    val employeeRole: String?,
+    val currentOrganizationId: Long?
 )
 
 data class UserCreateRequest(

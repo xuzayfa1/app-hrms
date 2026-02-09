@@ -11,9 +11,9 @@ spring:
       auto-index-creation: true
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: ${PG_URL:jdbc:postgresql://localhost:5432/app_hrms}
+    url: ${PG_URL:jdbc:postgresql://localhost:5432/hr_auth_db}
     username: ${PG_USER:postgres}
-    password: ${PG_PASSWORD:root123}
+    password: ${PG_PASSWORD:1012}
     hikari:
       schema: auth_schema
   jpa:

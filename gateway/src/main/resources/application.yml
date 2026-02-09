@@ -10,3 +10,8 @@ spring:
     import: 'configserver:'
   profiles:
     active: local
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG

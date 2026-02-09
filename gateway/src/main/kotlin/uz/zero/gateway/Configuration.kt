@@ -37,7 +37,7 @@ class SecurityConfig {
             .authorizeExchange {
                 it
                     .pathMatchers("/actuator/**", "/error").permitAll()
-                    .pathMatchers("/user/api/v1/users/login/**").permitAll()
+                    .pathMatchers("/user/api/v1/login/**").permitAll()
                     .pathMatchers("/user/api/v1/users/register/**").permitAll()
                     .pathMatchers("/file/api/v1/files/view/**").permitAll()
                     .pathMatchers("/api/v1/auth/oauth2/**").permitAll()
@@ -70,9 +70,17 @@ class SecurityConfig {
                         mutatedRequest.header(USER_ORG_ID_HEADER_KEY, orgId)
 
                         // Exchange attributes (logging yoki boshqa filtrlar uchun)
-                        exchange.attributes[USER_ID_HEADER_KEY] = details[USER_ID_KEY]
-                        exchange.attributes[USER_NAME_HEADER_KEY] = details[USER_USERNAME_KEY]
-                        exchange.attributes[USER_ORG_ID_HEADER_KEY] = orgId
+//                        exchange.attributes[USER_ID_HEADER_KEY] = details[USER_ID_KEY]
+//                        exchange.attributes[USER_NAME_HEADER_KEY] = details[USER_USERNAME_KEY]
+//                        exchange.attributes[USER_ORG_ID_HEADER_KEY] = orgId
+
+                        // Exchange attributes qismini shunday o'zgartiring:
+
+                        details[USER_ID_KEY]?.let { exchange.attributes[USER_ID_HEADER_KEY] = it }
+                        details[USER_USERNAME_KEY]?.let { exchange.attributes[USER_NAME_HEADER_KEY] = it }
+                        if (orgId.isNotEmpty()) {
+                            exchange.attributes[USER_ORG_ID_HEADER_KEY] = orgId
+                        }
                         // ---------------------------------------
 
                         val newExchange = exchange.mutate().request(mutatedRequest.build()).build()

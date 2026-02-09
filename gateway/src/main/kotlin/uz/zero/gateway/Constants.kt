@@ -1,8 +1,8 @@
 package uz.zero.gateway
 
 
-const val USER_ID_KEY = "id"
-const val USER_USERNAME_KEY = "username"
+const val USER_ID_KEY = "uid"
+const val USER_USERNAME_KEY = "sub"
 const val USER_ROLE_KEY = "role"
 const val USER_PERMISSION_GROUPS_KEY = "permissionGroups"
 const val USER_PERMISSIONS_KEY = "permissions"
@@ -15,7 +15,7 @@ const val CACHED_REQUEST_BODY_KEY = "cached-request-body"
 const val CACHED_URL_KEY = "cached-request-url"
 const val API_LOG_TOPIC = "OB_API_LOG"
 const val X_REAL_IP = "x-real-ip"
-const val USER_ORG_ID_KEY = "currentOrgId" // Auth-servicedan keladigan json key
+const val USER_ORG_ID_KEY = "oid" // Auth-servicedan keladigan json key
 const val USER_ORG_ID_HEADER_KEY = "X-Org-Id"
 
 

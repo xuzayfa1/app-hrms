@@ -10,6 +10,7 @@ data class BaseMessage(
 
 data class AuthRegisterRequest(
     val username: String,
+    val password: String,
     val role: String
 )
 
@@ -19,12 +20,15 @@ data class AuthUserResponse(
 
 data class UserAuthDto(
     val userId: Long,
+    val username: String,
     val currentOrgId: Long?,
+    val employeeId: Long?,
     val role: String
 )
 
 data class UserCreateRequest(
     val username: String,
+    val password: String,
     val email: String,
     val firstName: String,
     val lastName: String
@@ -43,6 +47,7 @@ data class UserResponse(
     val firstName: String,
     val lastName: String,
     val isActive: Boolean,
+    val currentOrgId: Long?,
     val createdAt: Date,
     val updatedAt: Date
 )

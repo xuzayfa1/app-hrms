@@ -4,6 +4,7 @@ import jakarta.persistence.*
 import org.hibernate.annotations.ColumnDefault
 import org.springframework.data.annotation.CreatedBy
 import org.springframework.data.annotation.CreatedDate
+import org.springframework.data.annotation.LastModifiedDate
 import org.springframework.data.jpa.domain.support.AuditingEntityListener
 import java.time.LocalDateTime
 import java.util.*
@@ -15,6 +16,8 @@ open class BaseEntity(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) var id: Long? = null,
 
     @CreatedDate @Temporal(TemporalType.TIMESTAMP) var createdDate: Date? = null,
+
+    @LastModifiedDate @Temporal(TemporalType.TIMESTAMP) var updatedDate: Date? = null,
 
     @CreatedBy var createdBy: Long? = null,
 
@@ -39,7 +42,7 @@ class User(
 class Organization(
     var name: String,
     var description: String? = null,
-    @OneToMany
+    @OneToMany(mappedBy = "organization")
     var employees: MutableList<Employee> = mutableListOf()
 ) : BaseEntity()
 

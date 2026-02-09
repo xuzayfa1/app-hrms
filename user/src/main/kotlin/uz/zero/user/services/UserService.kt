@@ -23,23 +23,23 @@ class UserServiceImpl(
 ) : UserService {
 
     override fun getUserAuthDetails(authUserId: Long): UserAuthDto {
-        val user = userRepository.findByAuthUserId(authUserId)
-            .orElseThrow {UserNotFoundException()}
+        val user = userRepository.findByAuthUserIdAndDeletedFalse(authUserId)
+            .orElseThrow { UserNotFoundException() }
 
         val currentOrgId = user.currentOrgId
 
-        val role = if(currentOrgId != null ){
-            employeeRepository.findByUserIdAndOrganizationId(user.id!!, currentOrgId)
-                .map { it.role.name }
-                .orElse(null)
-        }else{
+        val employee = if (currentOrgId != null) {
+            employeeRepository.findActiveByUserIdAndOrgId(user.id!!, currentOrgId).orElse(null)
+        } else {
             null
         }
 
         return UserAuthDto(
             userId = user.id!!,
+            username = user.username,
             currentOrgId = currentOrgId,
-            role = role ?: "USER"
+            employeeId = employee?.id,
+            role = employee?.role?.name ?: "USER"
         )
     }
 
@@ -48,10 +48,11 @@ class UserServiceImpl(
         val user = userRepository.findByIdAndDeletedFalse(userId)
             ?: throw UserNotFoundException("User not found")
 
-        // Tekshirish: User haqiqatda shu tashkilotda ishlaydimi?
-        val isMember = employeeRepository.existsByUserIdAndOrganizationIdAndDeletedFalse(userId, orgId)
-        if (!isMember) {
-            throw ForbiddenException("Siz ushbu tashkilot a'zosi emassiz!")
+        val employee = employeeRepository.findActiveByUserIdAndOrgId(userId, orgId)
+            .orElseThrow { ForbiddenException("Siz ushbu tashkilotda aktiv xodim emassiz!") }
+
+        if (!employee.organization.isActive) {
+            throw InactiveOrganizationException("Tashkilot aktiv emas!")
         }
 
         user.currentOrgId = orgId
@@ -78,7 +79,7 @@ class UserServiceImpl(
         if (userRepository.existsByEmail(request.email)) {
             throw UserAlreadyExistsException("Email already exists: ${request.email}")
         }
-        val authResponse = authClient.registerInAuth(AuthRegisterRequest(request.username,"USER"))
+        val authResponse = authClient.registerInAuth(AuthRegisterRequest(request.username, request.password, "USER"))
 
         val user = User(
             username = request.username,
@@ -124,7 +125,8 @@ class UserServiceImpl(
         firstName = firstName,
         lastName = lastName,
         isActive = isActive,
+        currentOrgId = currentOrgId,
         createdAt = createdDate!!,
-        updatedAt = createdDate!!
+        updatedAt = updatedDate ?: createdDate!!
     )
 }

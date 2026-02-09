@@ -2,6 +2,7 @@ package uz.zero.user.services
 
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
+import uz.zero.user.EmployeeRepository
 import uz.zero.user.Organization
 import uz.zero.user.OrganizationCreateRequest
 import uz.zero.user.OrganizationNotFoundException
@@ -13,6 +14,7 @@ interface OrganizationService {
     fun getAllOrganizations(): List<OrganizationResponse>
     fun getOrganizationById(id: Long): OrganizationResponse
     fun getOrganizationsByCreator(createdBy: Long): List<OrganizationResponse>
+    fun getOrganizationsByUserId(userId: Long): List<OrganizationResponse>
     fun createOrganization(request: OrganizationCreateRequest, createdBy: Long): OrganizationResponse
     fun updateOrganization(id: Long, request: OrganizationUpdateRequest): OrganizationResponse
     fun deleteOrganization(id: Long)
@@ -20,7 +22,8 @@ interface OrganizationService {
 
 @Service
 class OrganizationServiceImpl(
-    private val organizationRepository: OrganizationRepository
+    private val organizationRepository: OrganizationRepository,
+    private val employeeRepository: EmployeeRepository
 ) : OrganizationService {
 
     @Transactional
@@ -38,6 +41,11 @@ class OrganizationServiceImpl(
     @Transactional
     override fun getOrganizationsByCreator(createdBy: Long): List<OrganizationResponse> {
         return organizationRepository.findByCreatedBy(createdBy).map { it.toResponse() }
+    }
+
+    @Transactional
+    override fun getOrganizationsByUserId(userId: Long): List<OrganizationResponse> {
+        return employeeRepository.findOrganizationsByUserId(userId).map { it.toResponse() }
     }
 
     @Transactional
@@ -78,6 +86,6 @@ class OrganizationServiceImpl(
         isActive = isActive,
         createdBy = createdBy,
         createdAt = createdDate!!,
-        updatedAt = createdDate!!
+        updatedAt = updatedDate ?: createdDate!!
     )
 }

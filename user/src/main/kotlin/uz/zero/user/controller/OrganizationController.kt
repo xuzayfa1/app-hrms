@@ -12,60 +12,58 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import uz.zero.user.EmployeeRole
 import uz.zero.user.OrganizationCreateRequest
 import uz.zero.user.OrganizationResponse
-import uz.zero.user.services.OrganizationService
 import uz.zero.user.OrganizationUpdateRequest
+import uz.zero.user.services.EmployeeService
+import uz.zero.user.services.OrganizationService
 
 @RestController
 @RequestMapping("/api/organizations")
 class OrganizationController(
-    private val organizationService: OrganizationService
+    private val organizationService: OrganizationService,
+    private val employeeService: EmployeeService
 ) {
 
     @GetMapping
     fun getAllOrganizations(
-        @RequestHeader("X-User-Role", required = false) userRole: String?
+        @RequestHeader("X-User-Id", required = false) currentUserId: String?,
+        @RequestHeader("X-Org-Id", required = false) currentOrgId: String?
     ): ResponseEntity<List<OrganizationResponse>> {
-        // Only ADMIN can see all organizations
-        if (userRole != "ADMIN") {
+        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
         }
 
-        val organizations = organizationService.getAllOrganizations()
-        return ResponseEntity.ok(organizations)
+        return ResponseEntity.ok(organizationService.getAllOrganizations())
     }
 
     @GetMapping("/{id}")
     fun getOrganizationById(@PathVariable id: Long): ResponseEntity<OrganizationResponse> {
-        val organization = organizationService.getOrganizationById(id)
-        return ResponseEntity.ok(organization)
+        return ResponseEntity.ok(organizationService.getOrganizationById(id))
     }
 
     @GetMapping("/my-organizations")
     fun getMyOrganizations(
         @RequestHeader("X-User-Id", required = false) currentUserId: String?
     ): ResponseEntity<List<OrganizationResponse>> {
-        if (currentUserId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
-        }
+        val userId = currentUserId?.toLongOrNull()
+            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
 
-        val organizations = organizationService.getOrganizationsByCreator(currentUserId.toLong())
-        return ResponseEntity.ok(organizations)
+        return ResponseEntity.ok(organizationService.getOrganizationsByUserId(userId))
     }
 
     @PostMapping
     fun createOrganization(
         @Valid @RequestBody request: OrganizationCreateRequest,
-        @RequestHeader("X-User-Role", required = false) userRole: String?,
-        @RequestHeader("X-User-Id", required = false) currentUserId: String?
+        @RequestHeader("X-User-Id", required = false) currentUserId: String?,
+        @RequestHeader("X-Org-Id", required = false) currentOrgId: String?
     ): ResponseEntity<OrganizationResponse> {
-        // Only ADMIN can create organizations
-        if (userRole != "ADMIN" || currentUserId == null) {
+        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
         }
 
-        val organization = organizationService.createOrganization(request, currentUserId.toLong())
+        val organization = organizationService.createOrganization(request, currentUserId!!.toLong())
         return ResponseEntity.status(HttpStatus.CREATED).body(organization)
     }
 
@@ -73,28 +71,34 @@ class OrganizationController(
     fun updateOrganization(
         @PathVariable id: Long,
         @Valid @RequestBody request: OrganizationUpdateRequest,
-        @RequestHeader("X-User-Role", required = false) userRole: String?
+        @RequestHeader("X-User-Id", required = false) currentUserId: String?,
+        @RequestHeader("X-Org-Id", required = false) currentOrgId: String?
     ): ResponseEntity<OrganizationResponse> {
-        // Only ADMIN can update organizations
-        if (userRole != "ADMIN") {
+        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
         }
 
-        val organization = organizationService.updateOrganization(id, request)
-        return ResponseEntity.ok(organization)
+        return ResponseEntity.ok(organizationService.updateOrganization(id, request))
     }
 
     @DeleteMapping("/{id}")
     fun deleteOrganization(
         @PathVariable id: Long,
-        @RequestHeader("X-User-Role", required = false) userRole: String?
+        @RequestHeader("X-User-Id", required = false) currentUserId: String?,
+        @RequestHeader("X-Org-Id", required = false) currentOrgId: String?
     ): ResponseEntity<Void> {
-        // Only ADMIN can delete organizations
-        if (userRole != "ADMIN") {
+        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
         }
 
         organizationService.deleteOrganization(id)
         return ResponseEntity.noContent().build()
+    }
+
+    private fun hasRole(userId: String?, orgId: String?, role: EmployeeRole): Boolean {
+        val uid = userId?.toLongOrNull() ?: return false
+        val oid = orgId?.toLongOrNull() ?: return false
+        val currentRole = employeeService.getUserRoleInOrg(uid, oid) ?: return false
+        return currentRole == role
     }
 }

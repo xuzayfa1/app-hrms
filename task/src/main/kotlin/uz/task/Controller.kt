@@ -132,7 +132,7 @@ class StateController(
 }
 
 @RestController
-@RequestMapping("tasks")
+@RequestMapping("/api/tasks")
 class TaskController(
     private val taskService: TaskService
 ) {

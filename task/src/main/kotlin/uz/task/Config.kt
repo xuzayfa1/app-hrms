@@ -55,6 +55,9 @@ class ResourceServerConfig(
         return Converter<Jwt, JwtAuthenticationToken> { source ->
             source
             val userDetailsJson = getHeader(USER_DETAILS_HEADER_KEY)?.decompress()
+            println("++++++++++++++++++++++++++++++++++++++++++++++++")
+            println(userDetailsJson)
+            println("++++++++++++++++++++++++++++++++++++++++++++++++")
             val userDetails = userDetailsJson?.run { objectMapper.readValue(this, UserInfoResponse::class.java) }
             val username = userDetails?.username ?: username()
             val authorities = mutableListOf<SimpleGrantedAuthority>()

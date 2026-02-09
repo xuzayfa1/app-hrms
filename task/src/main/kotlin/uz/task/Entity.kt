@@ -48,7 +48,7 @@ class Project(
 @Table(name = "boards")
 class Board(
     @Column(nullable = false) var name: String,
-    @ManyToOne(fetch = FetchType.LAZY) @Column(nullable = false)var project: Project,
+    @ManyToOne(fetch = FetchType.LAZY) var project: Project,
     @Enumerated(EnumType.STRING) var status: Status = Status.ACTIVE,
 ):BaseEntity()
 

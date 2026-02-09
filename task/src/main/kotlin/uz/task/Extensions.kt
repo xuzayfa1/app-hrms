@@ -46,21 +46,20 @@ fun username(): String {
 fun userId(): Long {
     return getUserJwtPrincipal()?.claims?.get(USER_ID_KEY) as Long
 }
-fun orgId(): Long {
+fun orgId1(): Long {
     return getUserJwtPrincipal()?.claims?.get(ORG_ID_KEY) as Long
 }
 
-fun employeeId(): Long {
+fun employeeId1(): Long {
     return getUserJwtPrincipal()?.claims?.get(EMPLOYEE_ID_KEY) as Long
 }
 
-fun employeePosition(): EmployeeRole {
-    return getUserJwtPrincipal()?.claims?.get(EMPLOYEE_POS_KEY) as EmployeeRole
+fun employeePosition1(): String {
+    return getUserJwtPrincipal()?.claims?.get(EMPLOYEE_POS_KEY) as String
 }
 
 object Context {
-    fun orgId(): Long = orgId()
-    fun userId(): Long = userId()
-    fun employeeId(): Long = employeeId()
-    fun employeePos(): EmployeeRole = employeePosition()
+    fun orgId(): Long = orgId1()
+    fun employeeId(): Long = employeeId1()
+    fun employeePos(): String = employeePosition1()
 }

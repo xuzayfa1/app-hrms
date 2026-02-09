@@ -352,12 +352,12 @@ class StateServiceImpl(
 }
 
 interface TaskService {
-    fun create(req: CreateTaskRequest): TaskResponse
+    fun create(req: CreateTaskRequest): TaskResponseMedia
     fun update(req: UpdateTaskRequest): TaskResponse
     fun delete(id: Long)
-    fun getOne(id: Long): TaskResponse
-    fun getAllByBoardId(boardId: Long, pageable: Pageable): Page<TaskResponse>
-    fun getMyTasks(pageable: Pageable): Page<TaskResponse>
+    fun getOne(id: Long): TaskResponseMedia
+    fun getAllByBoardId(boardId: Long, pageable: Pageable): Page<TaskResponseMedia>
+    fun getMyTasks(pageable: Pageable): Page<TaskResponseMedia>
     fun changeState(req: ChangeTaskStateRequest): TaskResponse
 }
 
@@ -367,10 +367,11 @@ class TaskServiceImpl(
     private val boardRepository: BoardRepository,
     private val stateRepository: StateRepository,
     private val taskAssigneeRepository: TaskAssigneeRepository,
+    private val taskMediaRepository: TaskMediaRepository,
 ) : TaskService {
 
     @Transactional
-    override fun create(req: CreateTaskRequest): TaskResponse {
+    override fun create(req: CreateTaskRequest): TaskResponseMedia {
         val orgId = Context.orgId()
         val employeeId = Context.employeeId()
 
@@ -385,6 +386,8 @@ class TaskServiceImpl(
         val now = Date()
         if (req.deadline != null && req.deadline.before(now)) throw DeadlineInPastException()
 
+
+
         val task = Task(
             title = req.title.trim(),
             description = req.description.trim(),
@@ -393,8 +396,22 @@ class TaskServiceImpl(
             ownerId = employeeId,
             deadline = req.deadline
         )
+       val saved = taskRepository.save(task)
 
-        return TaskResponse.toResponse(taskRepository.save(task))
+        req.medias?.let {
+            req.medias.forEach {
+                taskMediaRepository.save(
+                    TaskMedia(
+                        task = task,
+                        hashId = it
+                    )
+                )
+            }
+        }
+
+
+
+        return TaskResponseMedia.toResponse(saved,req.medias?:emptyList())
     }
 
     @Transactional
@@ -432,22 +449,31 @@ class TaskServiceImpl(
     }
 
     @Transactional(readOnly = true)
-    override fun getOne(id: Long): TaskResponse {
+    override fun getOne(id: Long): TaskResponseMedia {
         val orgId = Context.orgId()
 
         val t = taskRepository.findByIdAndDeletedFalse(id) ?: throw TaskNotFoundException()
         if (t.board.project.organizationId != orgId) throw AccessDeniedException()
 
-        return TaskResponse.toResponse(t)
+        val media = taskMediaRepository.findAllByTask(t).map {
+            it.hashId
+        }
+
+        return TaskResponseMedia.toResponse(t,media)
     }
 
     @Transactional(readOnly = true)
-    override fun getMyTasks(pageable: Pageable): Page<TaskResponse> {
+    override fun getMyTasks(pageable: Pageable): Page<TaskResponseMedia> {
         val orgId = Context.orgId()
         val employeeId = Context.employeeId()
 
         return taskRepository.findMyTasks(orgId, employeeId, pageable)
-            .map { TaskResponse.toResponse(it) }
+            .map {
+                val media = taskMediaRepository.findAllByTask(it).map {media->
+                    media.hashId
+                }
+                TaskResponseMedia.toResponse(it,media)
+            }
     }
 
 
@@ -532,14 +558,19 @@ class TaskServiceImpl(
     }
 
     @Transactional(readOnly = true)
-    override fun getAllByBoardId(boardId: Long, pageable: Pageable): Page<TaskResponse> {
+    override fun getAllByBoardId(boardId: Long, pageable: Pageable): Page<TaskResponseMedia> {
         val orgId = Context.orgId()
 
         val board = boardRepository.findByIdAndDeletedFalse(boardId) ?: throw BoardNotFoundException()
         if (board.project.organizationId != orgId) throw AccessDeniedException()
 
         return taskRepository.findAllByBoardIdAndDeletedFalse(boardId, pageable)
-            .map { TaskResponse.toResponse(it) }
+            .map {
+                val media = taskMediaRepository.findAllByTask(it).map {media->
+                    media.hashId
+                }
+                TaskResponseMedia.toResponse(it,media)
+            }
     }
 }
 

@@ -45,19 +45,20 @@ class BaseRepositoryImpl<T : BaseEntity>(
     override fun trashList(ids: List<Long>): List<T?> = ids.map { trash(it) }
 }
 
+@Repository
 interface ProjectRepository : BaseRepository<Project>{
     fun findAllByOrganizationIdAndDeletedFalse(orgId: Long, pageable: Pageable): Page<Project>
 }
 
 
-
+@Repository
 interface BoardRepository : BaseRepository<Board> {
 
     fun findAllByProjectId(projectId: Long, pageable: Pageable): Page<Board>
     fun existsByProjectIdAndDeletedFalse(id: Long): Boolean
 
 }
-
+@Repository
 interface WorkflowRepository : BaseRepository<Workflow> {
     @Query("""
         select w from Workflow w
@@ -73,11 +74,11 @@ interface WorkflowRepository : BaseRepository<Workflow> {
 """)
     fun existsByWorkflowId(@Param("workflowId") workflowId: Long): Boolean
 }
-
+@Repository
 interface StateRepository : BaseRepository<State> {
     fun findAllByWorkflowIdAndDeletedFalse(workflowId: Long, pageable: Pageable): Page<State>
 }
-
+@Repository
 interface TaskRepository : BaseRepository<Task> {
     fun findAllByBoardIdAndDeletedFalse(boardId: Long, pageable: Pageable): Page<Task>
 
@@ -105,7 +106,12 @@ interface TaskRepository : BaseRepository<Task> {
     """)
     fun existsOpenTasksByProjectId(@Param("projectId") projectId: Long): Boolean
 }
-
+@Repository
 interface TaskAssigneeRepository : BaseRepository<TaskAssignee> {
     fun existsByTaskIdAndEmployeeIdAndDeletedFalse(taskId: Long, employeeId: Long): Boolean
+}
+
+@Repository
+interface TaskMediaRepository : BaseRepository<TaskMedia> {
+    fun findAllByTask(task: Task): List<TaskMedia>
 }

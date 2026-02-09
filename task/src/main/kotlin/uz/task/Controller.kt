@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController
 
 
 @RestController
-@RequestMapping("/api/task/projects")
+@RequestMapping("/api/v1/task/projects")
 class ProjectController(
     private val projectService: ProjectService
 ) {
@@ -49,7 +49,7 @@ class ProjectController(
 
 
 @RestController
-@RequestMapping("/api/task/boards")
+@RequestMapping("/api/v1/task/boards")
 class BoardController(
     private val boardService: BoardService
 ) {
@@ -81,7 +81,7 @@ class BoardController(
 }
 
 @RestController
-@RequestMapping("/api/task/workflows")
+@RequestMapping("/api/v1/task/workflows")
 class WorkflowController(
     private val workflowService: WorkflowService
 ) {
@@ -106,7 +106,7 @@ class WorkflowController(
 }
 
 @RestController
-@RequestMapping("/api/task/states")
+@RequestMapping("/api/v1/task/states")
 class StateController(
     private val stateService: StateService
 ) {
@@ -132,13 +132,13 @@ class StateController(
 }
 
 @RestController
-@RequestMapping("/api/task/tasks")
+@RequestMapping("/api/v1/task/tasks")
 class TaskController(
     private val taskService: TaskService
 ) {
 
     @PostMapping
-    fun create(@RequestBody req: CreateTaskRequest): TaskResponse {
+    fun create(@RequestBody req: CreateTaskRequest): TaskResponseMedia {
         return taskService.create(req)
     }
 
@@ -152,7 +152,7 @@ class TaskController(
     @PostMapping("/delete/{id}") fun delete(@PathVariable id: Long) = taskService.delete(id)
 
     @GetMapping
-    fun getAllByBoardId(@RequestParam boardId: Long, pageable: Pageable): Page<TaskResponse> {
+    fun getAllByBoardId(@RequestParam boardId: Long, pageable: Pageable): Page<TaskResponseMedia> {
         return taskService.getAllByBoardId(boardId, pageable)
     }
 

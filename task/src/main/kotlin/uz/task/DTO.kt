@@ -124,6 +124,7 @@ data class CreateTaskRequest(
     val stateId: Long,
     val title: String,
     val description: String,
+    val medias: List<String>? = emptyList(),
     val deadline: Date? = null,
 )
 
@@ -157,6 +158,29 @@ data class TaskResponse(
             description = t.description,
             ownerId = t.ownerId,
             deadline = t.deadline
+        )
+    }
+}
+data class TaskResponseMedia(
+    val id: Long,
+    val boardId: Long,
+    val stateId: Long,
+    val title: String,
+    val description: String,
+    val ownerId: Long,
+    val medias: List<String>?,
+    val deadline: Date?
+) {
+    companion object {
+        fun toResponse(t: Task,media:List<String>) = TaskResponseMedia(
+            id = t.id!!,
+            boardId = t.board.id!!,
+            stateId = t.state.id!!,
+            title = t.title,
+            description = t.description,
+            ownerId = t.ownerId,
+            deadline = t.deadline,
+            medias = media
         )
     }
 }

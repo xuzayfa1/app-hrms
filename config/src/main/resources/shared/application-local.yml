@@ -2,11 +2,13 @@ services:
   hosts:
     gateway: http://localhost:8080
     user: http://localhost:8081
+    task: http://localhost:8083
     file: http://localhost:8082
     auth: http://localhost:8089
   ports:
     gateway: 8080
     user: 8081
+    task: 8083
     file: 8082
     auth: 8089
 

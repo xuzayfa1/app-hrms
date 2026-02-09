@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController
 
 
 @RestController
-@RequestMapping("/api/v1/task/projects")
+@RequestMapping("projects")
 class ProjectController(
     private val projectService: ProjectService
 ) {
@@ -49,7 +49,7 @@ class ProjectController(
 
 
 @RestController
-@RequestMapping("/api/v1/task/boards")
+@RequestMapping("boards")
 class BoardController(
     private val boardService: BoardService
 ) {
@@ -81,7 +81,7 @@ class BoardController(
 }
 
 @RestController
-@RequestMapping("/api/v1/task/workflows")
+@RequestMapping("workflows")
 class WorkflowController(
     private val workflowService: WorkflowService
 ) {
@@ -106,7 +106,7 @@ class WorkflowController(
 }
 
 @RestController
-@RequestMapping("/api/v1/task/states")
+@RequestMapping("states")
 class StateController(
     private val stateService: StateService
 ) {
@@ -132,7 +132,7 @@ class StateController(
 }
 
 @RestController
-@RequestMapping("/api/v1/task/tasks")
+@RequestMapping("tasks")
 class TaskController(
     private val taskService: TaskService
 ) {

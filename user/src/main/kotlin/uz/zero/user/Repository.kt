@@ -43,8 +43,6 @@ class BaseRepositoryImpl<T : BaseEntity>(
 
 interface UserRepository : BaseRepository<User> {
 
-    fun findByAuthUserId(authUserId: Long): Optional<User>
-
     fun findByUsername(username: String): Optional<User>
 
     fun findByEmail(email: String): Optional<User>
@@ -55,8 +53,6 @@ interface UserRepository : BaseRepository<User> {
 
     @Query("SELECT u FROM User u WHERE u.isActive = true AND u.deleted = false")
     fun findAllActive(): List<User>
-
-    fun findByAuthUserIdAndDeletedFalse(authUserId: Long): Optional<User>
 
     @Query("SELECT u FROM User u WHERE u.username = :username AND u.deleted = false")
     fun findByUsernameAndDeletedFalse(username: String): User?

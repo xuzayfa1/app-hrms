@@ -31,7 +31,7 @@ class AuthorizationServerConfig {
     @Bean
     fun authorizationServerSettings(authorizationServerProperties: OAuth2AuthorizationServerProperties): AuthorizationServerSettings {
         return AuthorizationServerSettings.builder()
-            .issuer("http://localhost:8085")
+            .issuer("http://localhost:8089")
             .build()
     }
 

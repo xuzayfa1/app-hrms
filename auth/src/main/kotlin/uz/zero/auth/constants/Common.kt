@@ -17,3 +17,8 @@ val PRINCIPAL_KEY: String = Principal::class.java.name
 const val USERNAME_KEY = "username"
 const val PASSWORD_KEY = "password"
 const val PARTNER_ROLE = "PARTNER"
+
+
+const val ORG_ID_KEY = "oid"
+const val EMPLOYEE_ID_KEY = "eid"
+const val EMPLOYEE_POS_KEY = "per"

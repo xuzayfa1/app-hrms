@@ -18,8 +18,11 @@ import org.springframework.security.web.SecurityFilterChain
 import uz.zero.auth.components.AuthServerAuthenticationConverter
 import uz.zero.auth.components.AuthServerAuthenticationProvider
 import uz.zero.auth.components.JwtAuthenticationConverter
+import uz.zero.auth.constants.EMPLOYEE_ID_KEY
+import uz.zero.auth.constants.EMPLOYEE_POS_KEY
 import uz.zero.auth.constants.JWT_ROLE_KEY
 import uz.zero.auth.constants.JWT_USER_ID_KEY
+import uz.zero.auth.constants.ORG_ID_KEY
 import uz.zero.auth.model.security.CustomUserDetails
 
 @Configuration
@@ -103,6 +106,9 @@ class AuthorizationServerConfig {
                 if (principal != null && principal is CustomUserDetails) {
                     context.claims.claim(JWT_USER_ID_KEY, principal.getUserId())
                     context.claims.claim(JWT_ROLE_KEY, principal.getRole())
+                    context.claims.claim(ORG_ID_KEY, principal.getCurrentOrganizationId())
+                    context.claims.claim(EMPLOYEE_ID_KEY, principal.getEmployeeId())
+                    context.claims.claim(EMPLOYEE_POS_KEY, principal.getEmployeeRole())
                 }
             }
         }

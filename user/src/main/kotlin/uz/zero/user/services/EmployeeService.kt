@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service
 import uz.zero.user.Employee
 import uz.zero.user.EmployeeAlreadyExistsException
 import uz.zero.user.EmployeeCreateRequest
+import uz.zero.user.EmployeeRole
 import uz.zero.user.EmployeeDetailResponse
 import uz.zero.user.EmployeeNotFoundException
 import uz.zero.user.EmployeeRepository
@@ -26,6 +27,7 @@ interface EmployeeService {
     fun assignEmployeeToOrganization(request: EmployeeCreateRequest): EmployeeResponse
     fun updateEmployee(id: Long, request: EmployeeUpdateRequest): EmployeeResponse
     fun removeEmployee(id: Long)
+    fun getUserRoleInOrg(userId: Long, orgId: Long): EmployeeRole?
 }
 
 
@@ -82,7 +84,19 @@ class EmployeeServiceImpl(
         )
 
         val savedEmployee = employeeRepository.save(employee)
+
+        if (user.currentOrgId == null) {
+            user.currentOrgId = organization.id
+            userRepository.save(user)
+        }
+
         return savedEmployee.toResponse()
+    }
+
+    override fun getUserRoleInOrg(userId: Long, orgId: Long): EmployeeRole? {
+        return employeeRepository.findActiveByUserIdAndOrgId(userId, orgId)
+            .map { it.role }
+            .orElse(null)
     }
 
     @Transactional
@@ -124,8 +138,9 @@ class EmployeeServiceImpl(
             firstName = user.firstName,
             lastName = user.lastName,
             isActive = user.isActive,
+            currentOrgId = user.currentOrgId,
             createdAt = user.createdDate!!,
-            updatedAt = user.createdDate!!
+            updatedAt = user.updatedDate ?: user.createdDate!!
         ),
         organization = OrganizationResponse(
             id = organization.id!!,
@@ -134,7 +149,7 @@ class EmployeeServiceImpl(
             isActive = organization.isActive,
             createdBy = organization.createdBy,
             createdAt = organization.createdDate!!,
-            updatedAt = organization.createdDate!!
+            updatedAt = organization.updatedDate ?: organization.createdDate!!
         ),
         role = role,
         isActive = isActive,

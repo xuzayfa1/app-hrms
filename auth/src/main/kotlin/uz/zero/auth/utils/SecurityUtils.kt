@@ -41,13 +41,18 @@ class CustomUserDetailsDeserializer : JsonDeserializer<CustomUserDetails>() {
         val password = requireField("password").asText()
         val role = requireField("role").asText()
         val enabled = requireField("enabled").asBoolean()
+        val employeeId = requireField("employeeId").asLong()
+        val employeeRole = requireField("employeeRole").asText()
+        val currentOrganizationId = requireField("currentOrganizationId").asLong()
 
         return CustomUserDetails(
             id = id,
             username = username,
-            password = password,
             role = role,
             enabled = enabled,
+            employeeId = employeeId,
+            employeeRole = employeeRole,
+            currentOrganizationId = currentOrganizationId,
         )
     }
 }

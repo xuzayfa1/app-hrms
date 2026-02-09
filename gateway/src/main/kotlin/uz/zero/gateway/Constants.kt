@@ -15,6 +15,8 @@ const val CACHED_REQUEST_BODY_KEY = "cached-request-body"
 const val CACHED_URL_KEY = "cached-request-url"
 const val API_LOG_TOPIC = "OB_API_LOG"
 const val X_REAL_IP = "x-real-ip"
+const val USER_ORG_ID_KEY = "currentOrgId" // Auth-servicedan keladigan json key
+const val USER_ORG_ID_HEADER_KEY = "X-Org-Id"
 
 
 val IGNORED_HEADERS = setOf(USER_DETAILS_HEADER_KEY, REQUEST_ID_HEADER)

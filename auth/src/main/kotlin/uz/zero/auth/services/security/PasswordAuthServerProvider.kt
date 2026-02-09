@@ -17,41 +17,34 @@ import uz.zero.auth.model.security.AuthServerAuthenticationToken
 
 @Service
 class PasswordAuthServerProvider(
-    private val userDetailsService: UserDetailsService,
-    private val passwordEncoder: PasswordEncoder
+    private val userVerifyService: UserVerifyService
 ) : AuthServerProvider {
     companion object {
 
     }
-
-    override fun provide(
-        client: RegisteredClient,
-        authenticationToken: AuthServerAuthenticationToken
-    ): OAuth2Authorization {
-        if (authenticationToken.grantTypes != grantType()) throw AuthenticationServiceException("Invalid auth server grantType")
+    override fun provide(client: RegisteredClient, authenticationToken: AuthServerAuthenticationToken): OAuth2Authorization {
+        if (authenticationToken.grantTypes != grantType())
+            throw AuthenticationServiceException("Invalid auth server grantType")
 
         val username = authenticationToken.parameters[USERNAME_KEY]?.firstOrNull()
             ?: throw AuthenticationServiceException("Invalid username")
         val password = authenticationToken.parameters[PASSWORD_KEY]?.firstOrNull()
-            ?: throw AuthenticationServiceException("Invalid username")
+            ?: throw AuthenticationServiceException("Invalid password")
 
-        val userDetails = userDetailsService.loadUserByUsername(username)
-        if (!passwordEncoder.matches(password, userDetails.password))
-            throw AuthenticationServiceException("User not found or invalid password")
+
+        val userDetails = userVerifyService.verify(username, password)
 
         @Suppress("DEPRECATION")
         return OAuth2Authorization
             .withRegisteredClient(client)
-            .principalName(username)
+            .principalName(userDetails.username)
             .authorizationGrantType(AuthorizationGrantType.PASSWORD)
             .attributes {
                 it[PRINCIPAL_KEY] =
                     UsernamePasswordAuthenticationToken(userDetails, null, userDetails.authorities)
             }
             .build()
-
     }
-
     override fun grantType() = AuthServerGrantType.PASSWORD
 
 }

@@ -1,6 +1,7 @@
 package uz.zero.user.services
 
 import jakarta.transaction.Transactional
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import uz.zero.user.*
 
@@ -11,7 +12,7 @@ interface UserService {
     fun updateUser(id: Long, request: UserUpdateRequest): UserResponse
     fun deleteUser(id: Long)
     fun switchOrganization(userId: Long, orgId: Long): UserResponse
-    fun getUserAuthDetails(authUserId: Long): UserAuthDto
+    fun verifyUser(request: VerifyUserRequest): UserAuthDto
 }
 
 
@@ -19,27 +20,38 @@ interface UserService {
 class UserServiceImpl(
     private val userRepository: UserRepository,
     private val employeeRepository: EmployeeRepository,
-    private val authClient: AuthClient
+    private val passwordEncoder: PasswordEncoder
 ) : UserService {
 
-    override fun getUserAuthDetails(authUserId: Long): UserAuthDto {
-        val user = userRepository.findByAuthUserId(authUserId)
-            .orElseThrow {UserNotFoundException()}
+    @Transactional
+    override fun verifyUser(request: VerifyUserRequest): UserAuthDto {
+        val user = userRepository.findByUsernameAndDeletedFalse(request.username)
+            ?: throw UserNotFoundException("User not found")
+
+        if (!passwordEncoder.matches(request.password, user.password)) {
+            throw UnauthorizedException("Invalid password")
+        }
+
+        if (!user.isActive) {
+            throw InactiveUserException("User is not active")
+        }
 
         val currentOrgId = user.currentOrgId
 
-        val role = if(currentOrgId != null ){
-            employeeRepository.findByUserIdAndOrganizationId(user.id!!, currentOrgId)
-                .map { it.role.name }
-                .orElse(null)
-        }else{
+        val employee = if (currentOrgId != null) {
+            employeeRepository.findActiveByUserIdAndOrgId(user.id!!, currentOrgId).orElse(null)
+        } else {
             null
         }
 
         return UserAuthDto(
-            userId = user.id!!,
-            currentOrgId = currentOrgId,
-            role = role ?: "USER"
+            id = user.id!!,
+            username = user.username,
+            role = employee?.role?.name ?: "USER",
+            deleted = user.deleted,
+            employeeId = employee?.id,
+            employeeRole = employee?.role?.name,
+            currentOrganizationId = currentOrgId
         )
     }
 
@@ -48,10 +60,11 @@ class UserServiceImpl(
         val user = userRepository.findByIdAndDeletedFalse(userId)
             ?: throw UserNotFoundException("User not found")
 
-        // Tekshirish: User haqiqatda shu tashkilotda ishlaydimi?
-        val isMember = employeeRepository.existsByUserIdAndOrganizationIdAndDeletedFalse(userId, orgId)
-        if (!isMember) {
-            throw ForbiddenException("Siz ushbu tashkilot a'zosi emassiz!")
+        val employee = employeeRepository.findActiveByUserIdAndOrgId(userId, orgId)
+            .orElseThrow { ForbiddenException("Siz ushbu tashkilotda aktiv xodim emassiz!") }
+
+        if (!employee.organization.isActive) {
+            throw InactiveOrganizationException("Tashkilot aktiv emas!")
         }
 
         user.currentOrgId = orgId
@@ -78,14 +91,13 @@ class UserServiceImpl(
         if (userRepository.existsByEmail(request.email)) {
             throw UserAlreadyExistsException("Email already exists: ${request.email}")
         }
-        val authResponse = authClient.registerInAuth(AuthRegisterRequest(request.username,"USER"))
 
         val user = User(
             username = request.username,
+            password = passwordEncoder.encode(request.password),
             email = request.email,
             firstName = request.firstName,
-            lastName = request.lastName,
-            authUserId = authResponse.id
+            lastName = request.lastName
         )
 
         val savedUser = userRepository.save(user)
@@ -124,7 +136,8 @@ class UserServiceImpl(
         firstName = firstName,
         lastName = lastName,
         isActive = isActive,
+        currentOrgId = currentOrgId,
         createdAt = createdDate!!,
-        updatedAt = createdDate!!
+        updatedAt = updatedDate ?: createdDate!!
     )
 }

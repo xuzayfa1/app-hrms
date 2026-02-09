@@ -57,6 +57,9 @@ interface UserRepository : BaseRepository<User> {
     fun findAllActive(): List<User>
 
     fun findByAuthUserIdAndDeletedFalse(authUserId: Long): Optional<User>
+
+    @Query("SELECT u FROM User u WHERE u.username = :username AND u.deleted = false")
+    fun findByUsernameAndDeletedFalse(username: String): User?
 }
 
 interface OrganizationRepository : BaseRepository<Organization> {
@@ -71,6 +74,7 @@ interface EmployeeRepository : BaseRepository<Employee> {
 
     fun findByUserId(userId: Long): List<Employee>
 
+    @Query("SELECT e FROM Employee e WHERE e.organization.id = :organizationId AND e.deleted = false")
     fun findByOrganizationId(organizationId: Long): List<Employee>
 
     @Query("SELECT e FROM Employee e WHERE e.user.id = :userId AND e.organization.id = :organizationId AND e.deleted = false")
@@ -83,4 +87,10 @@ interface EmployeeRepository : BaseRepository<Employee> {
     fun findByOrganizationIdAndRole(organizationId: Long, role: EmployeeRole): List<Employee>
 
     fun existsByUserIdAndOrganizationIdAndDeletedFalse(userId: Long, organizationId: Long): Boolean
+
+    @Query("SELECT e FROM Employee e WHERE e.user.id = :userId AND e.organization.id = :orgId AND e.deleted = false AND e.isActive = true")
+    fun findActiveByUserIdAndOrgId(userId: Long, orgId: Long): Optional<Employee>
+
+    @Query("SELECT e.organization FROM Employee e WHERE e.user.id = :userId AND e.isActive = true AND e.deleted = false")
+    fun findOrganizationsByUserId(userId: Long): List<Organization>
 }

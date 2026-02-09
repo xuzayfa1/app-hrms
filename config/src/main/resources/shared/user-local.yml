@@ -16,7 +16,7 @@ spring:
         jdbc:
           lob:
             non_contextual_creation: true
-        default_schema: user-management
+        default_schema: schema_user
     hibernate:
       naming:
         implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl

@@ -68,38 +68,24 @@ class Workflow(
 class State(
 
     @Column(nullable = false) var name: String,
-
-    @Column(nullable = false) var terminal: Boolean = false
-
-    //todo order bolishi kerak , workflowga ulanishi kerak , kim otkazoladi enum permission bolishi kerak
+    @Column(nullable = false) var terminal: Boolean = false,
+    @Column(nullable = false)var orderNumber: Long,
+    @ManyToOne(fetch = FetchType.LAZY)var workflow: Workflow,
+    @Enumerated(EnumType.STRING)var permission: Permission
 
 ):BaseEntity()
-
-//@Entity
-//@Table(
-//    name = "state_transitions",
-//    uniqueConstraints = [
-//        UniqueConstraint(columnNames = ["from_state_id", "to_state_id"])
-//    ]
-//)
-//class StateTransition(
-//
-//    @ManyToOne(fetch = FetchType.LAZY) var fromState: State,
-//
-//    @ManyToOne(fetch = FetchType.LAZY) var toState: State
-//
-//) :BaseEntity()
 
 
 
 @Entity
 @Table(name = "tasks")
 class Task(
-    var title: String,
-    var description: String,
+    @Column(nullable = false)var title: String,
+    @Column(nullable = false)var description: String,
     @ManyToOne(fetch = FetchType.LAZY) var board: Board,
     @ManyToOne(fetch = FetchType.LAZY) var state: State,
-    @Column(nullable = false) var ownerId:Long
+    @Column(nullable = false) var ownerId:Long,
+    @Temporal(TemporalType.TIMESTAMP) var deadline: Date?,
 ):BaseEntity()
 
 @Entity
@@ -110,9 +96,13 @@ class Task(
     ]
 )
 class TaskAssignee(
-
     @ManyToOne(fetch = FetchType.LAZY) var task: Task,
-
     @Column(nullable = false) var employeeId: Long
-
 ) : BaseEntity()
+
+@Entity
+@Table(name = "task_media")
+class TaskMedia(
+    @ManyToOne(fetch = FetchType.LAZY) var task: Task,
+    @Column(nullable = false)var hashId: String
+):BaseEntity()

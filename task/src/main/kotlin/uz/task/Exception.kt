@@ -69,6 +69,29 @@ class AccessDeniedException : TaskException() {
     override fun errorType() = ErrorCode.ACCESS_DENIED
 }
 
+class WorkflowNotFoundException : TaskException() {
+    override fun errorType() = ErrorCode.WORKFLOW_NOT_FOUND
+}
+
+class StateNotFoundException : TaskException() {
+    override fun errorType() = ErrorCode.STATE_NOT_FOUND
+}
+
+class TaskNotFoundException : TaskException() {
+    override fun errorType() = ErrorCode.TASK_NOT_FOUND
+}
+
+class InvalidStateWorkflowException : TaskException() {
+    override fun errorType() = ErrorCode.INVALID_STATE_WORKFLOW
+}
+
+class SystemWorkflowReadonlyException : TaskException() {
+    override fun errorType() = ErrorCode.SYSTEM_WORKFLOW_EXCEPTION
+}
+
+class DeadlineExpiredException : TaskException() {
+    override fun errorType() = ErrorCode.DEADLINE_EXPIRED
+}
 
 
 

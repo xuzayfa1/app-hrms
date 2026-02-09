@@ -64,9 +64,104 @@ data class BoardResponse(
     }
 }
 
-data class IdDto(
-    val id: Long
+data class CreateWorkflowRequest(
+    val name: String
 )
+
+data class UpdateWorkflowRequest(
+    val id: Long,
+    val name: String
+)
+
+data class WorkflowResponse(
+    val id: Long,
+    val name: String,
+    val organizationId: Long
+) {
+    companion object {
+        fun toResponse(w: Workflow) = WorkflowResponse(
+            w.id!!,
+            w.name,
+            w.organizationId!!
+        )
+    }
+}
+
+data class CreateStateRequest(
+    val workflowId: Long,
+    val name: String,
+    val orderNumber: Long,
+    val permission: Permission
+)
+
+data class UpdateStateRequest(
+    val id: Long,
+    val name: String? = null,
+    val orderNumber: Long? = null,
+    val permission: Permission? = null
+)
+
+data class StateResponse(
+    val id: Long,
+    val workflowId: Long,
+    val name: String,
+    val terminal: Boolean,
+    val orderNumber: Long,
+    val permission: Permission
+) {
+    companion object {
+        fun toResponse(s: State) = StateResponse(
+            id = s.id!!,
+            workflowId = s.workflow.id!!,
+            name = s.name,
+            terminal = s.terminal,
+            orderNumber = s.orderNumber,
+            permission = s.permission
+        )
+    }
+}
+
+data class CreateTaskRequest(
+    val boardId: Long,
+    val stateId: Long,
+    val title: String,
+    val description: String,
+    val deadline: Date,
+)
+
+data class UpdateTaskRequest(
+    val id: Long,
+    val title: String? = null,
+    val description: String? = null,
+    val deadline: Date? = null
+)
+
+data class ChangeTaskStateRequest(
+    val taskId: Long,
+    val stateId: Long
+)
+
+data class TaskResponse(
+    val id: Long,
+    val boardId: Long,
+    val stateId: Long,
+    val title: String,
+    val description: String,
+    val ownerId: Long,
+    val deadline: Date?
+) {
+    companion object {
+        fun toResponse(t: Task) = TaskResponse(
+            id = t.id!!,
+            boardId = t.board.id!!,
+            stateId = t.state.id!!,
+            title = t.title,
+            description = t.description,
+            ownerId = t.ownerId,
+            deadline = t.deadline
+        )
+    }
+}
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class UserInfoResponse(

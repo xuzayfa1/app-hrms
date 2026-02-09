@@ -4,7 +4,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-
+import java.util.Date
 
 
 interface ProjectService {
@@ -170,6 +170,304 @@ class BoardServiceImpl(
 
         return boardRepository.findAllByProjectId(projectId, pageable)
             .map { BoardResponse.toResponse(it) }
+    }
+}
+
+interface WorkflowService {
+    fun create(req: CreateWorkflowRequest): WorkflowResponse
+    fun update(req: UpdateWorkflowRequest): WorkflowResponse
+    fun delete(id: Long)
+    fun getOne(id: Long): WorkflowResponse
+    fun getAll(pageable: Pageable): Page<WorkflowResponse>
+}
+
+@Service
+class WorkflowServiceImpl(
+    private val workflowRepository: WorkflowRepository
+) : WorkflowService {
+
+    @Transactional
+    override fun create(req: CreateWorkflowRequest): WorkflowResponse {
+        val orgId = Context.orgId()
+
+        val w = Workflow(
+            name = req.name.trim(),
+            organizationId = orgId
+        )
+        return WorkflowResponse.toResponse(workflowRepository.save(w))
+    }
+    @Transactional
+    override fun update(req: UpdateWorkflowRequest): WorkflowResponse {
+        val orgId = Context.orgId()
+        val w = workflowRepository.findByIdAndDeletedFalse(req.id) ?: throw WorkflowNotFoundException()
+
+        // system default readonly
+        if (w.organizationId == null) throw SystemWorkflowReadonlyException()
+        if (w.organizationId != orgId) throw AccessDeniedException()
+
+        req.name.let { w.name = it.trim() }
+        return WorkflowResponse.toResponse(workflowRepository.save(w))
+    }
+
+    @Transactional
+    override fun delete(id: Long) {
+        val orgId = Context.orgId()
+        val w = workflowRepository.findByIdAndDeletedFalse(id) ?: throw WorkflowNotFoundException()
+
+        if (w.organizationId == null) throw SystemWorkflowReadonlyException()
+        if (w.organizationId != orgId) throw AccessDeniedException()
+
+        workflowRepository.trash(w.id!!)
+    }
+
+    @Transactional(readOnly = true)
+    override fun getOne(id: Long): WorkflowResponse {
+        val orgId = Context.orgId()
+        val w = workflowRepository.findByIdAndDeletedFalse(id) ?: throw WorkflowNotFoundException()
+
+        if (w.organizationId == null) return WorkflowResponse.toResponse(w)
+        if (w.organizationId != null && w.organizationId != orgId) throw AccessDeniedException()
+
+
+        return WorkflowResponse.toResponse(w)
+    }
+
+
+    @Transactional(readOnly = true)
+    override fun getAll(pageable: Pageable): Page<WorkflowResponse> {
+        val orgId = Context.orgId()
+        return workflowRepository.findAllByOrgId(orgId, pageable)
+            .map { WorkflowResponse.toResponse(it) }
+    }
+}
+
+interface StateService {
+    fun create(req: CreateStateRequest): StateResponse
+    fun update(req: UpdateStateRequest): StateResponse
+    fun delete(id: Long)
+    fun getOne(id: Long): StateResponse
+    fun getAllByWorkflowId(workflowId: Long, pageable: Pageable): Page<StateResponse>
+}
+
+@Service
+class StateServiceImpl(
+    private val workflowRepository: WorkflowRepository,
+    private val stateRepository: StateRepository
+) : StateService {
+
+    @Transactional
+    override fun create(req: CreateStateRequest): StateResponse {
+        val orgId = Context.orgId()
+
+        val workflow = workflowRepository.findByIdAndDeletedFalse(req.workflowId) ?: throw WorkflowNotFoundException()
+
+        if (workflow.organizationId != orgId) throw AccessDeniedException()
+
+        val state = State(
+            name = req.name.trim(),
+            orderNumber = req.orderNumber,
+            workflow = workflow,
+            permission = req.permission
+        )
+
+        return StateResponse.toResponse(stateRepository.save(state))
+    }
+
+    @Transactional
+    override fun update(req: UpdateStateRequest): StateResponse {
+        val orgId = Context.orgId()
+        val s = stateRepository.findByIdAndDeletedFalse(req.id) ?: throw StateNotFoundException()
+
+        val w = s.workflow
+        if (w.organizationId == null) throw SystemWorkflowReadonlyException()
+        if (w.organizationId != orgId) throw AccessDeniedException()
+
+        req.name?.let { s.name = it.trim() }
+        req.orderNumber?.let { s.orderNumber = it }
+        req.permission?.let { s.permission = it }
+
+        return StateResponse.toResponse(stateRepository.save(s))
+    }
+
+    @Transactional
+    override fun delete(id: Long) {
+        val orgId = Context.orgId()
+        val s = stateRepository.findByIdAndDeletedFalse(id) ?: throw StateNotFoundException()
+
+        val w = s.workflow
+        if (w.organizationId == null) throw SystemWorkflowReadonlyException()
+        if (w.organizationId != orgId) throw AccessDeniedException()
+
+        stateRepository.trash(s.id!!)
+    }
+
+    @Transactional(readOnly = true)
+    override fun getOne(id: Long): StateResponse {
+        val orgId = Context.orgId()
+        val s = stateRepository.findByIdAndDeletedFalse(id) ?: throw StateNotFoundException()
+
+        // system state ham ko‘rinadi
+        val wOrg = s.workflow.organizationId
+        if (wOrg != null && wOrg != orgId) throw AccessDeniedException()
+
+        return StateResponse.toResponse(s)
+    }
+
+
+    @Transactional(readOnly = true)
+    override fun getAllByWorkflowId(workflowId: Long, pageable: Pageable): Page<StateResponse> {
+        val orgId = Context.orgId()
+
+        val workflow = workflowRepository.findByIdAndDeletedFalse(workflowId) ?: throw WorkflowNotFoundException()
+        if (workflow.organizationId != orgId) throw AccessDeniedException()
+
+        return stateRepository.findAllByWorkflowIdAndDeletedFalse(workflowId, pageable)
+            .map { StateResponse.toResponse(it) }
+    }
+}
+
+interface TaskService {
+    fun create(req: CreateTaskRequest): TaskResponse
+    fun update(req: UpdateTaskRequest): TaskResponse
+    fun delete(id: Long)
+    fun getOne(id: Long): TaskResponse
+    fun getAllByBoardId(boardId: Long, pageable: Pageable): Page<TaskResponse>
+    fun getMyTasks(pageable: Pageable): Page<TaskResponse>
+    fun changeState(req: ChangeTaskStateRequest): TaskResponse
+}
+
+@Service
+class TaskServiceImpl(
+    private val taskRepository: TaskRepository,
+    private val boardRepository: BoardRepository,
+    private val stateRepository: StateRepository,
+    private val taskAssigneeRepository: TaskAssigneeRepository,
+) : TaskService {
+
+    @Transactional
+    override fun create(req: CreateTaskRequest): TaskResponse {
+        val orgId = Context.orgId()
+        val employeeId = Context.employeeId()
+
+        val board = boardRepository.findByIdAndDeletedFalse(req.boardId) ?: throw BoardNotFoundException()
+        if (board.project.organizationId != orgId) throw AccessDeniedException()
+
+        val state = stateRepository.findByIdAndDeletedFalse(req.stateId) ?: throw StateNotFoundException()
+
+        val workflowOrgId = state.workflow.organizationId ?: throw AccessDeniedException()
+        if (workflowOrgId != orgId) throw AccessDeniedException()
+
+        val task = Task(
+            title = req.title.trim(),
+            description = req.description.trim(),
+            board = board,
+            state = state,
+            ownerId = employeeId,
+            deadline = req.deadline
+        )
+
+        return TaskResponse.toResponse(taskRepository.save(task))
+    }
+
+    @Transactional
+    override fun update(req: UpdateTaskRequest): TaskResponse {
+        val orgId = Context.orgId()
+        val employeeId = Context.employeeId()
+
+        val t = taskRepository.findByIdAndDeletedFalse(req.id) ?: throw TaskNotFoundException()
+        if (t.board.project.organizationId != orgId) throw AccessDeniedException()
+
+        if (t.ownerId != employeeId) throw AccessDeniedException()
+
+        req.title?.let { t.title = it.trim() }
+        req.description?.let { t.description = it.trim() }
+        req.deadline?.let { t.deadline = it }
+
+        return TaskResponse.toResponse(taskRepository.save(t))
+    }
+
+    @Transactional
+    override fun delete(id: Long) {
+        val orgId = Context.orgId()
+        val employeeId = Context.employeeId()
+
+        val t = taskRepository.findByIdAndDeletedFalse(id) ?: throw TaskNotFoundException()
+        if (t.board.project.organizationId != orgId) throw AccessDeniedException()
+
+        if (t.ownerId != employeeId) throw AccessDeniedException()
+
+        taskRepository.trash(t.id!!)
+    }
+
+    @Transactional(readOnly = true)
+    override fun getOne(id: Long): TaskResponse {
+        val orgId = Context.orgId()
+
+        val t = taskRepository.findByIdAndDeletedFalse(id) ?: throw TaskNotFoundException()
+        if (t.board.project.organizationId != orgId) throw AccessDeniedException()
+
+        return TaskResponse.toResponse(t)
+    }
+
+    @Transactional(readOnly = true)
+    override fun getMyTasks(pageable: Pageable): Page<TaskResponse> {
+        val orgId = Context.orgId()
+        val employeeId = Context.employeeId()
+
+        return taskRepository.findMyTasks(orgId, employeeId, pageable)
+            .map { TaskResponse.toResponse(it) }
+    }
+
+    @Transactional
+    override fun changeState(req: ChangeTaskStateRequest): TaskResponse {
+
+
+
+        val orgId = Context.orgId()
+        val employeeId = Context.employeeId()
+
+        val task = taskRepository.findByIdAndDeletedFalse(req.taskId) ?: throw TaskNotFoundException()
+        if (task.board.project.organizationId != orgId) throw AccessDeniedException()
+
+        val now = Date()
+        if (task.deadline != null && now.after(task.deadline)) throw DeadlineExpiredException()
+
+
+        val newState = stateRepository.findByIdAndDeletedFalse(req.stateId) ?: throw StateNotFoundException()
+        //yangi state workflowini tekshirish
+        val newStateOrgId = newState.workflow.organizationId
+        if (newStateOrgId != orgId) throw AccessDeniedException()
+
+        // workflow mosligiga tekshirish
+        val currentWorkflowId = task.state.workflow.id
+        val newWorkflowId = newState.workflow.id
+        if (currentWorkflowId != null && newWorkflowId != null && currentWorkflowId != newWorkflowId) {
+            throw InvalidStateWorkflowException()
+        }
+        //kim otkazoladi
+        when (newState.permission) {
+            Permission.OWNER -> {
+                if (task.ownerId != employeeId) throw AccessDeniedException()
+            }
+            Permission.ASSIGNEE -> {
+                val exist = taskAssigneeRepository.existsByTaskIdAndEmployeeIdAndDeletedFalse(task.id!!, employeeId)
+                if (!exist && task.ownerId != employeeId()) throw AccessDeniedException()
+            }
+        }
+
+        task.state = newState
+        return TaskResponse.toResponse(taskRepository.save(task))
+    }
+
+    @Transactional(readOnly = true)
+    override fun getAllByBoardId(boardId: Long, pageable: Pageable): Page<TaskResponse> {
+        val orgId = Context.orgId()
+
+        val board = boardRepository.findByIdAndDeletedFalse(boardId) ?: throw BoardNotFoundException()
+        if (board.project.organizationId != orgId) throw AccessDeniedException()
+
+        return taskRepository.findAllByBoardIdAndDeletedFalse(boardId, pageable)
+            .map { TaskResponse.toResponse(it) }
     }
 }
 

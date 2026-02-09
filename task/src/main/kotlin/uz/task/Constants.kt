@@ -9,7 +9,7 @@ const val USERNAME_KEY = "sub"
 
 const val ORG_ID_KEY = "oid"
 const val EMPLOYEE_ID_KEY = "eid"
-const val EMPLOYEE_POS_KEY = "pos"
+const val EMPLOYEE_POS_KEY = "per"
 
 const val ROLE_KEY = "rol"
 const val ROLE_LEVEL_KEY = "roll"

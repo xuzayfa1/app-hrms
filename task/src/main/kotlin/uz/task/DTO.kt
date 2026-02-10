@@ -77,13 +77,13 @@ data class UpdateWorkflowRequest(
 data class WorkflowResponse(
     val id: Long,
     val name: String,
-    val organizationId: Long
+    val organizationId: Long?
 ) {
     companion object {
         fun toResponse(w: Workflow) = WorkflowResponse(
             w.id!!,
             w.name,
-            w.organizationId!!
+            w.organizationId
         )
     }
 }
@@ -187,7 +187,7 @@ data class TaskResponseMedia(
 }
 
 
-@JsonIgnoreProperties(ignoreUnknown = true) // Tokenda bor lekin klassda yo'q maydonlarni e'tiborsiz qoldiradi
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class UserInfoResponse(
     @JsonProperty("uid")
     val id: Long,
@@ -198,7 +198,6 @@ data class UserInfoResponse(
     @JsonProperty("rol")
     val role: String,
 
-    // Agar tokenda 'enabled' bo'lmasa, default qiymat berish yoki nullable qilish kerak
     val enabled: Boolean = true,
 
     @JsonProperty("eid")

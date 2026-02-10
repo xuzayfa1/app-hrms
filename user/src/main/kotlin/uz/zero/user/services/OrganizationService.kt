@@ -28,7 +28,9 @@ class OrganizationServiceImpl(
 
     @Transactional
     override fun getAllOrganizations(): List<OrganizationResponse> {
-        return organizationRepository.findAllActive().map { it.toResponse() }
+        return organizationRepository.findAllActive().map {
+            it.toResponse()
+        }
     }
 
     @Transactional

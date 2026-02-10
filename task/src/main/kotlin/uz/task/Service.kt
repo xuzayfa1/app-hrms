@@ -344,7 +344,9 @@ class StateServiceImpl(
         val orgId = Context.orgId()
 
         val workflow = workflowRepository.findByIdAndDeletedFalse(workflowId) ?: throw WorkflowNotFoundException()
-        if (workflow.organizationId != orgId) throw AccessDeniedException()
+        if(workflow.organizationId != null) {
+            if (workflow.organizationId != orgId) throw AccessDeniedException()
+        }
 
         return stateRepository.findAllByWorkflowIdAndDeletedFalse(workflowId, pageable)
             .map { StateResponse.toResponse(it) }

@@ -9,7 +9,7 @@
     <file type="web" url="file://$PROJECT_DIR$/task" />
     <file type="web" url="file://$PROJECT_DIR$/user" />
   </component>
-  <component name="ProjectRootManager">
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_X" default="true" project-jdk-name="temurin-24" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>
 </project>

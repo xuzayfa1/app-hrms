@@ -1,5 +1,6 @@
 package uz.zero.user
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import java.time.LocalDateTime
 import java.util.Date
 
@@ -76,7 +77,7 @@ data class EmployeeCreateRequest(
 )
 
 data class EmployeeUpdateRequest(
-    val role: EmployeeRole?,
+    val role: String?,
     val isActive: Boolean?
 )
 
@@ -99,6 +100,29 @@ data class EmployeeDetailResponse(
     val role: EmployeeRole,
     val isActive: Boolean,
     val joinedAt: LocalDateTime
+)
+
+data class UserInfoResponse(
+    @JsonProperty("uid")
+    val id: Long,
+
+    @JsonProperty("sub")
+    val username: String,
+
+    @JsonProperty("rol")
+    val role: String,
+
+    // Agar tokenda 'enabled' bo'lmasa, default qiymat berish yoki nullable qilish kerak
+    val enabled: Boolean = true,
+
+    @JsonProperty("eid")
+    val employeeId: Long,
+
+    @JsonProperty("per")
+    val employeeRole: String,
+
+    @JsonProperty("oid")
+    val currentOrganizationId: Long
 )
 
 

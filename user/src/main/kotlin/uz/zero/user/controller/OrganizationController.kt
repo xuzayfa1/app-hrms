@@ -12,10 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import uz.zero.user.EmployeeRole
-import uz.zero.user.OrganizationCreateRequest
-import uz.zero.user.OrganizationResponse
-import uz.zero.user.OrganizationUpdateRequest
+import uz.zero.user.*
 import uz.zero.user.services.EmployeeService
 import uz.zero.user.services.OrganizationService
 
@@ -30,27 +27,25 @@ class OrganizationController(
     fun getAllOrganizations(
         @RequestHeader("X-User-Id", required = false) currentUserId: String?,
         @RequestHeader("X-Org-Id", required = false) currentOrgId: String?
-    ): ResponseEntity<List<OrganizationResponse>> {
-        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
-        }
+    ): List<OrganizationResponse> {
+        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN))throw ForbiddenException()
 
-        return ResponseEntity.ok(organizationService.getAllOrganizations())
+        return organizationService.getAllOrganizations()
     }
 
     @GetMapping("/{id}")
-    fun getOrganizationById(@PathVariable id: Long): ResponseEntity<OrganizationResponse> {
-        return ResponseEntity.ok(organizationService.getOrganizationById(id))
+    fun getOrganizationById(@PathVariable id: Long): OrganizationResponse {
+        return organizationService.getOrganizationById(id)
     }
 
     @GetMapping("/my-organizations")
     fun getMyOrganizations(
         @RequestHeader("X-User-Id", required = false) currentUserId: String?
-    ): ResponseEntity<List<OrganizationResponse>> {
+    ): List<OrganizationResponse> {
         val userId = currentUserId?.toLongOrNull()
-            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+            ?: throw UnauthorizedException()
 
-        return ResponseEntity.ok(organizationService.getOrganizationsByUserId(userId))
+        return organizationService.getOrganizationsByCreator(userId)
     }
 
     @PostMapping
@@ -58,13 +53,11 @@ class OrganizationController(
         @Valid @RequestBody request: OrganizationCreateRequest,
         @RequestHeader("X-User-Id", required = false) currentUserId: String?,
         @RequestHeader("X-Org-Id", required = false) currentOrgId: String?
-    ): ResponseEntity<OrganizationResponse> {
-        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
-        }
+    ): OrganizationResponse {
+        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)) throw ForbiddenException()
 
         val organization = organizationService.createOrganization(request, currentUserId!!.toLong())
-        return ResponseEntity.status(HttpStatus.CREATED).body(organization)
+        return organization
     }
 
     @PutMapping("/{id}")
@@ -73,12 +66,9 @@ class OrganizationController(
         @Valid @RequestBody request: OrganizationUpdateRequest,
         @RequestHeader("X-User-Id", required = false) currentUserId: String?,
         @RequestHeader("X-Org-Id", required = false) currentOrgId: String?
-    ): ResponseEntity<OrganizationResponse> {
-        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
-        }
-
-        return ResponseEntity.ok(organizationService.updateOrganization(id, request))
+    ): OrganizationResponse{
+        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)) throw ForbiddenException()
+        return organizationService.updateOrganization(id, request)
     }
 
     @DeleteMapping("/{id}")
@@ -86,13 +76,10 @@ class OrganizationController(
         @PathVariable id: Long,
         @RequestHeader("X-User-Id", required = false) currentUserId: String?,
         @RequestHeader("X-Org-Id", required = false) currentOrgId: String?
-    ): ResponseEntity<Void> {
-        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
-        }
+    ){
+        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)) throw ForbiddenException()
 
         organizationService.deleteOrganization(id)
-        return ResponseEntity.noContent().build()
     }
 
     private fun hasRole(userId: String?, orgId: String?, role: EmployeeRole): Boolean {

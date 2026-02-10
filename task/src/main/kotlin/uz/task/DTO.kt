@@ -1,7 +1,8 @@
 package uz.task
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import java.util.Date
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonProperty
 
 
 data class BaseMessage(val code: Int? = null, val message: String? = null) {
@@ -185,12 +186,28 @@ data class TaskResponseMedia(
     }
 }
 
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class UserInfoResponse(
+    @JsonProperty("uid")
     val id: Long,
-    val fullName: String,
+
+    @JsonProperty("sub")
     val username: String,
+
+    @JsonProperty("rol")
     val role: String,
+
+    val enabled: Boolean = true,
+
+    @JsonProperty("eid")
+    val employeeId: Long,
+
+    @JsonProperty("per")
+    val employeeRole: String,
+
+    @JsonProperty("oid")
+    val currentOrganizationId: Long
 )
 
 

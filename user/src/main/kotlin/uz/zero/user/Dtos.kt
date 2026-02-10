@@ -112,7 +112,7 @@ data class UserInfoResponse(
     @JsonProperty("rol")
     val role: String,
 
-    // Agar tokenda 'enabled' bo'lmasa, default qiymat berish yoki nullable qilish kerak
+    
     val enabled: Boolean = true,
 
     @JsonProperty("eid")
@@ -123,6 +123,27 @@ data class UserInfoResponse(
 
     @JsonProperty("oid")
     val currentOrganizationId: Long
+)
+
+//========================================================
+
+data class SwitchOrganizationResponse(
+    val success: Boolean,
+    val message: String?,
+    val data: SwitchOrganizationData?
+)
+
+data class SwitchOrganizationData(
+    val accessToken: String,
+    val refreshToken: String?,
+    val expiresIn: Long,
+    val organization: OrgInfo
+)
+
+data class OrgInfo(
+    val id: Long,
+    val name: String,
+    val employeeRole: EmployeeRole
 )
 
 

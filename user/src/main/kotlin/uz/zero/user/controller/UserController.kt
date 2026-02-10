@@ -89,8 +89,8 @@ class UserController(
     fun switchOrg(
         @PathVariable orgId: Long,
         @RequestHeader("X-User-Id") currentUserId: String
-    ): UserResponse {
-        return userService.switchOrganization(currentUserId.toLong(), orgId)
+    ): SwitchOrganizationResponse {
+        return userService.switchOrganizationWithToken(currentUserId.toLong(), orgId)
     }
 
     private fun hasRole(userId: String?, orgId: String?, role: EmployeeRole): Boolean {

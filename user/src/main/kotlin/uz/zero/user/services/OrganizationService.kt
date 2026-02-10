@@ -2,19 +2,13 @@ package uz.zero.user.services
 
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
-import uz.zero.user.EmployeeRepository
-import uz.zero.user.Organization
-import uz.zero.user.OrganizationCreateRequest
-import uz.zero.user.OrganizationNotFoundException
-import uz.zero.user.OrganizationRepository
-import uz.zero.user.OrganizationResponse
-import uz.zero.user.OrganizationUpdateRequest
+import uz.zero.user.*
 
 interface OrganizationService {
     fun getAllOrganizations(): List<OrganizationResponse>
     fun getOrganizationById(id: Long): OrganizationResponse
     fun getOrganizationsByCreator(createdBy: Long): List<OrganizationResponse>
-    fun getOrganizationsByUserId(userId: Long): List<OrganizationResponse>
+//    fun getOrganizationsByUserId(userId: Long): List<OrganizationResponse>
     fun createOrganization(request: OrganizationCreateRequest, createdBy: Long): OrganizationResponse
     fun updateOrganization(id: Long, request: OrganizationUpdateRequest): OrganizationResponse
     fun deleteOrganization(id: Long)
@@ -37,6 +31,8 @@ class OrganizationServiceImpl(
     override fun getOrganizationById(id: Long): OrganizationResponse {
         val organization = organizationRepository.findByIdAndDeletedFalse(id)
             ?: throw OrganizationNotFoundException("Organization not found with id: $id")
+        val isTrue = employeeRepository.existsByUserIdAndOrganizationIdAndDeletedFalse(Context.userId(),id)
+        if (!isTrue) throw ForbiddenException()
         return organization.toResponse()
     }
 
@@ -45,10 +41,10 @@ class OrganizationServiceImpl(
         return organizationRepository.findByCreatedBy(createdBy).map { it.toResponse() }
     }
 
-    @Transactional
-    override fun getOrganizationsByUserId(userId: Long): List<OrganizationResponse> {
-        return employeeRepository.findOrganizationsByUserId(userId).map { it.toResponse() }
-    }
+//    @Transactional
+//    override fun getOrganizationsByUserId(userId: Long): List<OrganizationResponse> {
+//        return employeeRepository.findOrganizationsByUserId(userId).map { it.toResponse() }
+//    }
 
     @Transactional
     override fun createOrganization(request: OrganizationCreateRequest, createdBy: Long): OrganizationResponse {

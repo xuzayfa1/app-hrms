@@ -13,6 +13,7 @@ interface UserService {
     fun deleteUser(id: Long)
     fun switchOrganization(userId: Long, orgId: Long): UserResponse
     fun verifyUser(request: VerifyUserRequest): UserAuthDto
+    fun switchOrganizationWithToken(userId: Long, orgId: Long): SwitchOrganizationResponse
 }
 
 
@@ -20,7 +21,8 @@ interface UserService {
 class UserServiceImpl(
     private val userRepository: UserRepository,
     private val employeeRepository: EmployeeRepository,
-    private val passwordEncoder: PasswordEncoder
+    private val passwordEncoder: PasswordEncoder,
+    private val authServiceClient: AuthServiceClient
 ) : UserService {
 
     @Transactional
@@ -140,4 +142,59 @@ class UserServiceImpl(
         createdAt = createdDate!!,
         updatedAt = updatedDate ?: createdDate!!
     )
+
+
+
+    @Transactional
+    override fun switchOrganizationWithToken(userId: Long, orgId: Long): SwitchOrganizationResponse {
+        // 1. Update user's current org
+        val user = userRepository.findByIdAndDeletedFalse(userId)
+            ?: throw UserNotFoundException("User not found")
+
+        val employee = employeeRepository.findActiveByUserIdAndOrgId(userId, orgId)
+            .orElseThrow { ForbiddenException("Siz ushbu tashkilotda aktiv xodim emassiz!") }
+
+        if (!employee.organization.isActive) {
+            throw InactiveOrganizationException("Tashkilot aktiv emas!")
+        }
+
+        user.currentOrgId = orgId
+        userRepository.save(user)
+
+        // 2. Call Auth Service to generate new token
+        val tokenRequest = GenerateTokenRequest(
+            userId = user.id!!,
+            username = user.username,
+            role = employee.role.name,
+            organizationId = orgId,
+            employeeId = employee.id!!,
+            employeeRole = employee.role.name
+        )
+
+        val tokenResponse = try {
+            authServiceClient.generateToken(tokenRequest)
+        } catch (e: Exception) {
+            throw RuntimeException("Failed to generate token: ${e.message}")
+        }
+
+//        if (!tokenResponse.success || tokenResponse.data == null) {
+//            throw RuntimeException("Token generation failed")
+//        }
+
+        // 3. Return response with new token
+        return SwitchOrganizationResponse(
+            success = true,
+            message = "Tashkilot muvaffaqiyatli almashtirildi",
+            data = SwitchOrganizationData(
+                accessToken = tokenResponse.accessToken,
+                refreshToken = tokenResponse.refreshToken,
+                expiresIn = tokenResponse.expiresIn,
+                organization = OrgInfo(
+                    id = employee.organization.id!!,
+                    name = employee.organization.name,
+                    employeeRole = employee.role
+                )
+            )
+        )
+    }
 }

@@ -1,7 +1,9 @@
 package uz.zero.user.services
 
 import jakarta.transaction.Transactional
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.web.server.ResponseStatusException
 import uz.zero.user.Employee
 import uz.zero.user.EmployeeAlreadyExistsException
 import uz.zero.user.EmployeeCreateRequest
@@ -45,6 +47,8 @@ class EmployeeServiceImpl(
 
     @Transactional
     override fun getEmployeesByOrganization(organizationId: Long): List<EmployeeResponse> {
+        organizationRepository.findByIdAndDeletedFalse(organizationId)
+            ?: throw OrganizationNotFoundException()
         return employeeRepository.findByOrganizationId(organizationId).map { it.toResponse() }
     }
 
@@ -104,8 +108,10 @@ class EmployeeServiceImpl(
         val employee = employeeRepository.findByIdAndDeletedFalse(id)
             ?: throw EmployeeNotFoundException("Employee not found with id: $id")
 
-        request.role?.let { employee.role = it }
+
+        request.role?.let { employee.role = it.toEmployeeRole() }
         request.isActive?.let { employee.isActive = it }
+
 
         val savedEmployee = employeeRepository.save(employee)
         return savedEmployee.toResponse()
@@ -155,4 +161,12 @@ class EmployeeServiceImpl(
         isActive = isActive,
         joinedAt = joinedAt
     )
+
+    fun String.toEmployeeRole(): EmployeeRole =
+        EmployeeRole.values().firstOrNull {
+            it.name.equals(this, ignoreCase = true)
+        } ?: throw ResponseStatusException(
+            HttpStatus.BAD_REQUEST,
+            "Noto‘g‘ri role: $this"
+        )
 }

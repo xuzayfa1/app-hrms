@@ -1,5 +1,6 @@
 package uz.zero.user
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import java.time.LocalDateTime
 import java.util.Date
 
@@ -76,7 +77,7 @@ data class EmployeeCreateRequest(
 )
 
 data class EmployeeUpdateRequest(
-    val role: EmployeeRole?,
+    val role: String?,
     val isActive: Boolean?
 )
 
@@ -99,6 +100,50 @@ data class EmployeeDetailResponse(
     val role: EmployeeRole,
     val isActive: Boolean,
     val joinedAt: LocalDateTime
+)
+
+data class UserInfoResponse(
+    @JsonProperty("uid")
+    val id: Long,
+
+    @JsonProperty("sub")
+    val username: String,
+
+    @JsonProperty("rol")
+    val role: String,
+
+    
+    val enabled: Boolean = true,
+
+    @JsonProperty("eid")
+    val employeeId: Long,
+
+    @JsonProperty("per")
+    val employeeRole: String,
+
+    @JsonProperty("oid")
+    val currentOrganizationId: Long
+)
+
+//========================================================
+
+data class SwitchOrganizationResponse(
+    val success: Boolean,
+    val message: String?,
+    val data: SwitchOrganizationData?
+)
+
+data class SwitchOrganizationData(
+    val accessToken: String,
+    val refreshToken: String?,
+    val expiresIn: Long,
+    val organization: OrgInfo
+)
+
+data class OrgInfo(
+    val id: Long,
+    val name: String,
+    val employeeRole: EmployeeRole
 )
 
 

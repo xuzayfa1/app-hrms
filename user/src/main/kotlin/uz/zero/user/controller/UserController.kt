@@ -13,10 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import uz.zero.user.EmployeeRole
-import uz.zero.user.UserCreateRequest
-import uz.zero.user.UserResponse
-import uz.zero.user.UserUpdateRequest
+import org.springframework.web.server.ResponseStatusException
+import uz.zero.user.*
 import uz.zero.user.services.EmployeeService
 import uz.zero.user.services.UserService
 
@@ -31,11 +29,13 @@ class UserController(
     fun getAllUsers(
         @RequestHeader("X-User-Id", required = false) currentUserId: String?,
         @RequestHeader("X-Org-Id", required = false) currentOrgId: String?
-    ): ResponseEntity<List<UserResponse>> {
-        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
+    ): List<UserResponse> {
+        val isAuthorized = hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)
+
+        if (!isAuthorized) {
+            throw ForbiddenException()
         }
-        return ResponseEntity.ok(userService.getAllUsers())
+        return userService.getAllUsers()
     }
 
     @GetMapping("/{id}")
@@ -48,13 +48,11 @@ class UserController(
         @Valid @RequestBody request: UserCreateRequest,
         @RequestHeader("X-User-Id", required = false) currentUserId: String?,
         @RequestHeader("X-Org-Id", required = false) currentOrgId: String?
-    ): ResponseEntity<UserResponse> {
-        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
-        }
+    ): UserResponse {
+        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)) throw ForbiddenException()
 
         val user = userService.createUser(request)
-        return ResponseEntity.status(HttpStatus.CREATED).body(user)
+        return user
     }
 
     @PutMapping("/{id}")
@@ -63,17 +61,16 @@ class UserController(
         @Valid @RequestBody request: UserUpdateRequest,
         @RequestHeader("X-User-Id", required = false) currentUserId: String?,
         @RequestHeader("X-Org-Id", required = false) currentOrgId: String?
-    ): ResponseEntity<UserResponse> {
+    ): UserResponse {
         val userId = currentUserId?.toLongOrNull()
-            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+            ?: throw UnauthorizedException()
 
         val isAdmin = hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)
-        if (!isAdmin && userId != id) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
-        }
+        if (!isAdmin && userId != id)
+            throw ForbiddenException()
 
         val user = userService.updateUser(id, request)
-        return ResponseEntity.ok(user)
+        return user
     }
 
     @DeleteMapping("/{id}")
@@ -81,13 +78,11 @@ class UserController(
         @PathVariable id: Long,
         @RequestHeader("X-User-Id", required = false) currentUserId: String?,
         @RequestHeader("X-Org-Id", required = false) currentOrgId: String?
-    ): ResponseEntity<Void> {
-        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
-        }
+    ) {
+        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN))
+            throw ForbiddenException()
 
         userService.deleteUser(id)
-        return ResponseEntity.noContent().build()
     }
 
     @PatchMapping("/switch-organization/{orgId}")

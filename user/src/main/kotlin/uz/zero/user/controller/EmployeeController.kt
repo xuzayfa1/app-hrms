@@ -1,22 +1,8 @@
 package uz.zero.user.controller
 
 import jakarta.validation.Valid
-import org.springframework.http.HttpStatus
-import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.DeleteMapping
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.PutMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestHeader
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
-import uz.zero.user.EmployeeCreateRequest
-import uz.zero.user.EmployeeDetailResponse
-import uz.zero.user.EmployeeResponse
-import uz.zero.user.EmployeeRole
-import uz.zero.user.EmployeeUpdateRequest
+import org.springframework.web.bind.annotation.*
+import uz.zero.user.*
 import uz.zero.user.services.EmployeeService
 
 @RestController
@@ -28,11 +14,11 @@ class EmployeeController(
     @GetMapping("/my-organizations")
     fun getMyOrganizations(
         @RequestHeader("X-User-Id", required = false) currentUserId: String?
-    ): ResponseEntity<List<EmployeeResponse>> {
+    ): List<EmployeeResponse> {
         val userId = currentUserId?.toLongOrNull()
-            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+            ?: throw UnauthorizedException()
 
-        return ResponseEntity.ok(employeeService.getEmployeesByUser(userId))
+        return employeeService.getEmployeesByUser(userId)
     }
 
     @GetMapping("/organization/{organizationId}")
@@ -40,19 +26,19 @@ class EmployeeController(
         @PathVariable organizationId: Long,
         @RequestHeader("X-User-Id", required = false) currentUserId: String?,
         @RequestHeader("X-Org-Id", required = false) currentOrgId: String?
-    ): ResponseEntity<List<EmployeeResponse>> {
+    ): List<EmployeeResponse> {
         if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)
             && !hasRole(currentUserId, currentOrgId, EmployeeRole.MANAGER)
         ) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
+            throw ForbiddenException()
         }
 
-        return ResponseEntity.ok(employeeService.getEmployeesByOrganization(organizationId))
+        return employeeService.getEmployeesByOrganization(organizationId)
     }
 
     @GetMapping("/{id}")
-    fun getEmployeeById(@PathVariable id: Long): ResponseEntity<EmployeeDetailResponse> {
-        return ResponseEntity.ok(employeeService.getEmployeeById(id))
+    fun getEmployeeById(@PathVariable id: Long): EmployeeDetailResponse {
+        return employeeService.getEmployeeById(id)
     }
 
     @PostMapping
@@ -60,13 +46,11 @@ class EmployeeController(
         @Valid @RequestBody request: EmployeeCreateRequest,
         @RequestHeader("X-User-Id", required = false) currentUserId: String?,
         @RequestHeader("X-Org-Id", required = false) currentOrgId: String?
-    ): ResponseEntity<EmployeeResponse> {
-        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
-        }
+    ): EmployeeResponse {
+        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN))
+            throw ForbiddenException()
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-            .body(employeeService.assignEmployeeToOrganization(request))
+        return employeeService.assignEmployeeToOrganization(request)
     }
 
     @PutMapping("/{id}")
@@ -75,12 +59,11 @@ class EmployeeController(
         @Valid @RequestBody request: EmployeeUpdateRequest,
         @RequestHeader("X-User-Id", required = false) currentUserId: String?,
         @RequestHeader("X-Org-Id", required = false) currentOrgId: String?
-    ): ResponseEntity<EmployeeResponse> {
-        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
-        }
+    ): EmployeeResponse {
+        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN))
+            throw ForbiddenException()
 
-        return ResponseEntity.ok(employeeService.updateEmployee(id, request))
+        return employeeService.updateEmployee(id, request)
     }
 
     @DeleteMapping("/{id}")
@@ -88,13 +71,10 @@ class EmployeeController(
         @PathVariable id: Long,
         @RequestHeader("X-User-Id", required = false) currentUserId: String?,
         @RequestHeader("X-Org-Id", required = false) currentOrgId: String?
-    ): ResponseEntity<Void> {
-        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
-        }
+    ) {
+        if (!hasRole(currentUserId, currentOrgId, EmployeeRole.ADMIN)) throw ForbiddenException()
 
         employeeService.removeEmployee(id)
-        return ResponseEntity.noContent().build()
     }
 
     private fun hasRole(userId: String?, orgId: String?, role: EmployeeRole): Boolean {

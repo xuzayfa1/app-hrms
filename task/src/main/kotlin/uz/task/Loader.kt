@@ -26,49 +26,53 @@ class DefaultStateLoader(
 
     private fun createSystemDefault() {
         try {
-            logger.info("Creating system default")
-            val workflow = Workflow(
-                name = "System default"
-            )
-            workflowRepository.save(workflow)
 
-            val stateList = mutableListOf<State>()
+            if (workflowRepository.count() == 0L) {
 
-            val stateToDo = State(
-                name = "TODO",
-                workflow = workflow,
-                orderNumber = 1,
-                permission = Permission.OWNER
-            )
-            stateList.add(stateToDo)
+                logger.info("Creating system default")
+                val workflow = Workflow(
+                    name = "System default"
+                )
+                workflowRepository.save(workflow)
 
-            val stateProg = State(
-                name = "IN_PROGRESS",
-                workflow = workflow,
-                orderNumber = 2,
-                permission = Permission.ASSIGNEE
-            )
-            stateList.add(stateProg)
+                val stateList = mutableListOf<State>()
 
-            val stateRev = State(
-                name = "REVIEW",
-                workflow = workflow,
-                orderNumber = 3,
-                permission = Permission.ASSIGNEE
-            )
-            stateList.add(stateRev)
+                val stateToDo = State(
+                    name = "TODO",
+                    workflow = workflow,
+                    orderNumber = 1,
+                    permission = Permission.OWNER
+                )
+                stateList.add(stateToDo)
 
-            val stateCom = State(
-                name = "COMPLETE",
-                workflow = workflow,
-                orderNumber = 4,
-                permission = Permission.OWNER
-            )
-            stateList.add(stateCom)
+                val stateProg = State(
+                    name = "IN_PROGRESS",
+                    workflow = workflow,
+                    orderNumber = 2,
+                    permission = Permission.ASSIGNEE
+                )
+                stateList.add(stateProg)
 
-            stateRepository.saveAll(stateList)
+                val stateRev = State(
+                    name = "REVIEW",
+                    workflow = workflow,
+                    orderNumber = 3,
+                    permission = Permission.ASSIGNEE
+                )
+                stateList.add(stateRev)
 
-            logger.info("System default states successfully loaded")
+                val stateCom = State(
+                    name = "COMPLETE",
+                    workflow = workflow,
+                    orderNumber = 4,
+                    permission = Permission.OWNER
+                )
+                stateList.add(stateCom)
+
+                stateRepository.saveAll(stateList)
+
+                logger.info("System default states successfully loaded")
+            }
         } catch (e: Exception) {
             logger.warn("Couldn't create default states. Stacktrace: ${e.stackTraceToString()}")
         }

@@ -26,15 +26,3 @@ data class GenerateTokenResponse(
     val expiresIn: Long,
     val tokenType: String = "Bearer"
 )
-
-// BaseMessage wrapper generic bilan
-//data class BaseMessage1<T>(
-//    val success: Boolean,
-//    val message: String?,
-//    val data: T?
-//) {
-//    companion object {
-//        fun <T> ok(data: T) = BaseMessage1(true, null, data)
-//        fun <T> error(message: String) = BaseMessage1<T>(false, message, null)
-//    }
-//}

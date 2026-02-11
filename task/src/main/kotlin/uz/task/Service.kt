@@ -29,13 +29,14 @@ class ProjectServiceImpl(
 
         Utils.checkPosition()
 
-        val orgId = Context.orgId() // id contexdan
+        val orgId = Context.orgId()
 
         val project = Project(
             name = req.name.trim(),
             organizationId = orgId,
             status = Status.ACTIVE
         )
+        project.createdBy = Context.employeeId()
 
         return ProjectResponse.toResponse(projectRepository.save(project))
     }
@@ -59,6 +60,8 @@ class ProjectServiceImpl(
             project.status = it
         }
 
+        project.lastModifiedBy = Context.employeeId()
+
         return ProjectResponse.toResponse(projectRepository.save(project))
     }
 
@@ -72,11 +75,16 @@ class ProjectServiceImpl(
 
         if (project.organizationId != orgId) throw AccessDeniedException()
 
+
+
         val hasBoard = boardRepository.existsByProjectIdAndDeletedFalse(id)
         val hasTasks = taskRepository.existsOpenTasksByProjectId(id)
         if (hasTasks || hasBoard) throw ProjectNotEmptyException()
 
         projectRepository.trash(project.id!!)
+
+        project.lastModifiedBy = Context.employeeId()
+        projectRepository.save(project)
     }
 
     @Transactional(readOnly = true)
@@ -125,6 +133,8 @@ class BoardServiceImpl(
 
         val project = projectRepository.findByIdAndDeletedFalse(req.projectId) ?: throw ProjectNotFoundException()
 
+        if(project.status == Status.INACTIVE) throw ProjectArchivedException()
+
         if (project.organizationId != orgId) throw AccessDeniedException()
 
         val board = Board(
@@ -132,6 +142,7 @@ class BoardServiceImpl(
             project = project,
             status = Status.ACTIVE
         )
+        board.createdBy = Context.employeeId()
 
         return BoardResponse.toResponse(boardRepository.save(board))
     }
@@ -153,6 +164,8 @@ class BoardServiceImpl(
             board.status = it
         }
 
+        board.lastModifiedBy = Context.employeeId()
+
         return BoardResponse.toResponse(boardRepository.save(board))
     }
 
@@ -170,6 +183,9 @@ class BoardServiceImpl(
         if (hasTasks) throw BoardNotEmptyException()
 
         boardRepository.trash(board.id!!)
+
+        board.lastModifiedBy = Context.employeeId()
+        boardRepository.save(board)
     }
 
     @Transactional(readOnly = true)
@@ -191,7 +207,7 @@ class BoardServiceImpl(
 
         if (project.organizationId != orgId) throw AccessDeniedException()
 
-        return boardRepository.findAllByProjectId(projectId, pageable)
+        return boardRepository.findAllByProjectIdAndDeletedFalse(projectId, pageable)
             .map { BoardResponse.toResponse(it) }
     }
 }
@@ -202,21 +218,30 @@ interface WorkflowService {
     fun delete(id: Long)
     fun getOne(id: Long): WorkflowResponse
     fun getAll(pageable: Pageable): Page<WorkflowResponse>
+    fun getAllByBoardId(id:Long,pageable: Pageable): Page<WorkflowResponse>
 }
 
 @Service
 class WorkflowServiceImpl(
-    private val workflowRepository: WorkflowRepository
+    private val workflowRepository: WorkflowRepository,
+    private val boardRepository: BoardRepository,
+    private val stateRepository: StateRepository
 ) : WorkflowService {
 
     @Transactional
     override fun create(req: CreateWorkflowRequest): WorkflowResponse {
         val orgId = Context.orgId()
 
+        val board = boardRepository.findByIdAndDeletedFalse(req.boardId) ?: throw BoardNotFoundException()
+
+        if (board.project.organizationId != orgId) throw AccessDeniedException()
+
         val w = Workflow(
             name = req.name.trim(),
-            organizationId = orgId
+            organizationId = orgId,
+            board = board
         )
+        w.createdBy = Context.employeeId()
         return WorkflowResponse.toResponse(workflowRepository.save(w))
     }
     @Transactional
@@ -229,6 +254,8 @@ class WorkflowServiceImpl(
         if (w.organizationId != orgId) throw AccessDeniedException()
 
         req.name.let { w.name = it.trim() }
+
+        w.lastModifiedBy = Context.employeeId()
         return WorkflowResponse.toResponse(workflowRepository.save(w))
     }
 
@@ -240,7 +267,12 @@ class WorkflowServiceImpl(
         if (w.organizationId == null) throw SystemWorkflowReadonlyException()
         if (w.organizationId != orgId) throw AccessDeniedException()
 
+        if(stateRepository.existsByWorkflowIdAndDeletedFalse(id)) throw WorkflowNotEmptyException()
+
         workflowRepository.trash(w.id!!)
+
+        w.lastModifiedBy = Context.employeeId()
+        workflowRepository.save(w)
     }
 
     @Transactional(readOnly = true)
@@ -262,6 +294,16 @@ class WorkflowServiceImpl(
         return workflowRepository.findAllByOrgId(orgId, pageable)
             .map { WorkflowResponse.toResponse(it) }
     }
+
+    override fun getAllByBoardId(id: Long, pageable: Pageable): Page<WorkflowResponse> {
+        val orgId = Context.orgId()
+        val board = boardRepository.findByIdAndDeletedFalse(id) ?: throw BoardNotFoundException()
+        if (board.project.organizationId != orgId) throw AccessDeniedException()
+
+        return workflowRepository.findAllByBoardId(id, pageable)
+            .map { WorkflowResponse.toResponse(it) }
+
+    }
 }
 
 interface StateService {
@@ -278,6 +320,30 @@ class StateServiceImpl(
     private val stateRepository: StateRepository
 ) : StateService {
 
+    private fun orderValidation(workflowId:Long,orderNumber:Long){
+        if (orderNumber < 1) throw InvalidStateOrderNumberException()
+
+        val existingStates = stateRepository.findAllByWorkflowId(workflowId)
+
+        if (existingStates.any { it.orderNumber == orderNumber }) throw InvalidStateOrderException()
+
+
+        if (existingStates.isNotEmpty()) {
+            val orderNumbers = existingStates.map { it.orderNumber }.toMutableList()
+            orderNumbers.add(orderNumber)
+            orderNumbers.sort()
+
+            // orderlar farqini tek qilish
+            for (i in 1 until orderNumbers.size - 1) {
+                val n = orderNumbers[i + 1] - orderNumbers[i]
+                if (n != 1L) throw InvalidStateOrderException()
+            }
+        } else {
+            //agar orderlar bolmasa 1dan boshlanishi kerak
+            if (orderNumber != 1L) throw InvalidStateOrderNumberException()
+        }
+    }
+
     @Transactional
     override fun create(req: CreateStateRequest): StateResponse {
         val orgId = Context.orgId()
@@ -286,12 +352,19 @@ class StateServiceImpl(
 
         if (workflow.organizationId != orgId) throw AccessDeniedException()
 
+
+        // Validation order number
+        orderValidation(req.workflowId,req.orderNumber)
+
+
         val state = State(
             name = req.name.trim(),
             orderNumber = req.orderNumber,
             workflow = workflow,
             permission = req.permission
         )
+
+        state.createdBy = Context.employeeId()
 
         return StateResponse.toResponse(stateRepository.save(state))
     }
@@ -306,8 +379,13 @@ class StateServiceImpl(
         if (w.organizationId != orgId) throw AccessDeniedException()
 
         req.name?.let { s.name = it.trim() }
-        req.orderNumber?.let { s.orderNumber = it }
+        req.orderNumber?.let {
+            orderValidation(s.workflow.id!!,req.orderNumber)
+            s.orderNumber = it
+        }
         req.permission?.let { s.permission = it }
+
+        s.lastModifiedBy = Context.employeeId()
 
         return StateResponse.toResponse(stateRepository.save(s))
     }
@@ -315,15 +393,19 @@ class StateServiceImpl(
     @Transactional
     override fun delete(id: Long) {
         val orgId = Context.orgId()
+        val empId = Context.employeeId()
         val s = stateRepository.findByIdAndDeletedFalse(id) ?: throw StateNotFoundException()
 
         val w = s.workflow
         if (w.organizationId == null) throw SystemWorkflowReadonlyException()
-        if (w.organizationId != orgId) throw AccessDeniedException()
+        if (w.organizationId != orgId && empId != s.createdBy) throw AccessDeniedException()
 
         if(workflowRepository.existsByWorkflowId(s.workflow.id!!)) throw StateInUseException()
 
         stateRepository.trash(s.id!!)
+
+        s.lastModifiedBy = Context.employeeId()
+        stateRepository.save(s)
     }
 
     @Transactional(readOnly = true)
@@ -361,6 +443,8 @@ interface TaskService {
     fun getAllByBoardId(boardId: Long, pageable: Pageable): Page<TaskResponseMedia>
     fun getMyTasks(pageable: Pageable): Page<TaskResponseMedia>
     fun changeState(req: ChangeTaskStateRequest): TaskResponse
+    fun assignTask(req: AssignTaskRequest)
+    fun removeAssignee(req: RemoveAssigneeRequest)
 }
 
 @Service
@@ -379,11 +463,14 @@ class TaskServiceImpl(
 
         val board = boardRepository.findByIdAndDeletedFalse(req.boardId) ?: throw BoardNotFoundException()
         if (board.project.organizationId != orgId) throw AccessDeniedException()
+        if (board.status == Status.INACTIVE) throw BoardArchivedException()
 
         val state = stateRepository.findByIdAndDeletedFalse(req.stateId) ?: throw StateNotFoundException()
 
-        val workflowOrgId = state.workflow.organizationId ?: throw AccessDeniedException()
-        if (workflowOrgId != orgId) throw AccessDeniedException()
+        val workflowOrgId = state.workflow.organizationId
+        if (workflowOrgId != null) {
+            if (workflowOrgId != orgId) throw AccessDeniedException()
+        }
 
         val now = Date()
         if (req.deadline != null && req.deadline.before(now)) throw DeadlineInPastException()
@@ -398,6 +485,8 @@ class TaskServiceImpl(
             ownerId = employeeId,
             deadline = req.deadline
         )
+
+        task.createdBy = Context.employeeId()
        val saved = taskRepository.save(task)
 
         req.medias?.let {
@@ -433,6 +522,7 @@ class TaskServiceImpl(
             if (req.deadline.before(now)) throw DeadlineInPastException()
             t.deadline = it
         }
+        t.lastModifiedBy = Context.employeeId()
 
         return TaskResponse.toResponse(taskRepository.save(t))
     }
@@ -448,6 +538,9 @@ class TaskServiceImpl(
         if (t.ownerId != employeeId) throw AccessDeniedException()
 
         taskRepository.trash(t.id!!)
+
+        t.lastModifiedBy = Context.employeeId()
+        taskRepository.save(t)
     }
 
     @Transactional(readOnly = true)
@@ -478,7 +571,6 @@ class TaskServiceImpl(
             }
     }
 
-
     @Transactional
     override fun changeState(req: ChangeTaskStateRequest): TaskResponse {
 
@@ -495,7 +587,9 @@ class TaskServiceImpl(
         val newState = stateRepository.findByIdAndDeletedFalse(req.stateId) ?: throw StateNotFoundException()
 
         val newStateOrgId = newState.workflow.organizationId
-        if (newStateOrgId != orgId) throw AccessDeniedException()
+        if(newStateOrgId != null) {
+            if (newStateOrgId != orgId) throw AccessDeniedException()
+        }
 
         val currentWorkflowId = task.state.workflow.id
         val newWorkflowId = newState.workflow.id
@@ -504,56 +598,29 @@ class TaskServiceImpl(
         }
 
         val currentState = task.state
-
         val isOwner = task.ownerId == employeeId
         val isAssignee = taskAssigneeRepository.existsByTaskIdAndEmployeeIdAndDeletedFalse(task.id!!, employeeId)
 
-        //owner hohlagan statega otkazadi agar ozini ozi biriktirgan bolsa
-        if (isOwner && isAssignee) {
+        // Owner bolsa hohlaganiga otkazadi
+        if (isOwner) {
             task.state = newState
+            task.lastModifiedBy = employeeId
             return TaskResponse.toResponse(taskRepository.save(task))
         }
 
+        // Assignee
+        if (isAssignee) {
+            val currentPer = currentState.permission
+            val targetPer = newState.permission
 
-        val currentPer = currentState.permission
-        val targetPer = newState.permission
-
-        // assignee lar faqat step-by-step otadi qaytadi
-        fun requireStep() {
-            val step = kotlin.math.abs(newState.orderNumber - currentState.orderNumber)
-            if (step != 1L) throw AccessDeniedException()
-        }
-
-        //assignee
-        if (targetPer == Permission.ASSIGNEE) {
-            if (isAssignee) {
-                //check step
-                requireStep()
-                task.state = newState
-                return TaskResponse.toResponse(taskRepository.save(task))
+            if (currentPer == Permission.ASSIGNEE && targetPer == Permission.ASSIGNEE) {
+                val step = kotlin.math.abs(newState.orderNumber - currentState.orderNumber)
+                if (step == 1L) {
+                    task.state = newState
+                    task.lastModifiedBy = employeeId
+                    return TaskResponse.toResponse(taskRepository.save(task))
+                }
             }
-
-            if (isOwner) {
-                //admin faqat owner dan qaytaroladi
-                if (currentPer != Permission.OWNER) throw AccessDeniedException()
-                // order boyicha qaytarganda kichik bolishi kerak
-                if (newState.orderNumber >= currentState.orderNumber) throw AccessDeniedException()
-                task.state = newState
-                return TaskResponse.toResponse(taskRepository.save(task))
-            }
-
-            throw AccessDeniedException()
-        }
-
-        //owner
-        if (targetPer == Permission.OWNER) {
-            if (!isOwner) throw AccessDeniedException()
-
-            if (currentPer != Permission.OWNER) throw AccessDeniedException()
-
-
-            task.state = newState
-            return TaskResponse.toResponse(taskRepository.save(task))
         }
 
         throw AccessDeniedException()
@@ -573,6 +640,45 @@ class TaskServiceImpl(
                 }
                 TaskResponseMedia.toResponse(it,media)
             }
+    }
+
+    @Transactional
+    override fun assignTask(req: AssignTaskRequest) {
+        val orgId = Context.orgId()
+        val employeeId = Context.employeeId()
+
+        val task = taskRepository.findByIdAndDeletedFalse(req.taskId) ?: throw TaskNotFoundException()
+        if (task.board.project.organizationId != orgId) throw AccessDeniedException()
+
+        if (task.ownerId != employeeId) throw AccessDeniedException()
+
+        val alreadyAssigned = taskAssigneeRepository.existsByTaskIdAndEmployeeIdAndDeletedFalse(req.taskId, req.employeeId)
+        if (alreadyAssigned) throw EmployeeAlreadyAssignedException()
+
+        val taskAssignee = TaskAssignee(
+            task = task,
+            employeeId = req.employeeId
+        )
+        taskAssignee.createdBy = employeeId
+        taskAssigneeRepository.save(taskAssignee)
+
+    }
+
+    @Transactional
+    override fun removeAssignee(req: RemoveAssigneeRequest) {
+        val orgId = Context.orgId()
+        val employeeId = Context.employeeId()
+
+        val task = taskRepository.findByIdAndDeletedFalse(req.taskId) ?: throw TaskNotFoundException()
+        if (task.board.project.organizationId != orgId) throw AccessDeniedException()
+
+        if (task.ownerId != employeeId) throw AccessDeniedException()
+
+        val assignee = taskAssigneeRepository.findByTaskIdAndEmployeeIdAndDeletedFalse(req.taskId, req.employeeId)
+            ?: throw AssigneeNotFoundException()
+
+        taskAssigneeRepository.trash(assignee.id!!)
+
     }
 }
 

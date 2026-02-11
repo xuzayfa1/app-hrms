@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
+import java.util.Optional
 
 @NoRepositoryBean
 interface BaseRepository<T : BaseEntity> : JpaRepository<T, Long>, JpaSpecificationExecutor<T> {
@@ -54,7 +55,7 @@ interface ProjectRepository : BaseRepository<Project>{
 @Repository
 interface BoardRepository : BaseRepository<Board> {
 
-    fun findAllByProjectId(projectId: Long, pageable: Pageable): Page<Board>
+    fun findAllByProjectIdAndDeletedFalse(projectId: Long, pageable: Pageable): Page<Board>
     fun existsByProjectIdAndDeletedFalse(id: Long): Boolean
 
 }
@@ -65,6 +66,8 @@ interface WorkflowRepository : BaseRepository<Workflow> {
         where w.deleted = false and (w.organizationId = :orgId or w.organizationId is null)
     """)
     fun findAllByOrgId(@Param("orgId") orgId: Long, pageable: Pageable): Page<Workflow>
+
+    fun findAllByBoardId(id:Long,pageable: Pageable):Page<Workflow>
 
     @Query("""
     select count(t) > 0
@@ -77,6 +80,17 @@ interface WorkflowRepository : BaseRepository<Workflow> {
 @Repository
 interface StateRepository : BaseRepository<State> {
     fun findAllByWorkflowIdAndDeletedFalse(workflowId: Long, pageable: Pageable): Page<State>
+
+    fun existsByWorkflowIdAndDeletedFalse(id:Long): Boolean
+
+    @Query("""
+        select s
+        from State s
+        where s.workflow.id = :workflowId
+            and s.deleted = false
+        order by s.orderNumber ASC
+    """)
+    fun findAllByWorkflowId(@Param("workflowId") workflowId: Long): List<State>
 }
 @Repository
 interface TaskRepository : BaseRepository<Task> {
@@ -109,6 +123,7 @@ interface TaskRepository : BaseRepository<Task> {
 @Repository
 interface TaskAssigneeRepository : BaseRepository<TaskAssignee> {
     fun existsByTaskIdAndEmployeeIdAndDeletedFalse(taskId: Long, employeeId: Long): Boolean
+    fun findByTaskIdAndEmployeeIdAndDeletedFalse(taskId: Long, employeeId: Long): TaskAssignee?
 }
 
 @Repository

@@ -26,14 +26,23 @@ data class ProjectResponse(
     val id: Long,
     val name: String,
     val organizationId: Long,
-    val status: Status
+    val status: Status,
+    val createdBy:Long?,
+    val createdAt:Date?,
+    val updatedAt:Date? = null,
+    val updatedBy:Long? = null,
 ) {
     companion object {
         fun toResponse(p: Project) = ProjectResponse(
             id = p.id!!,
             name = p.name,
             organizationId = p.organizationId,
-            status = p.status
+            status = p.status,
+            createdBy = p.createdBy,
+            createdAt = p.createdDate,
+            updatedAt = p.modifiedDate,
+            updatedBy = p.lastModifiedBy
+
         )
     }
 }
@@ -53,19 +62,28 @@ data class BoardResponse(
     val id: Long,
     val name: String,
     val projectId: Long,
-    val status: Status
+    val status: Status,
+    val createdBy:Long?,
+    val createdAt:Date?,
+    val updatedAt:Date? = null,
+    val updatedBy:Long? = null,
 ) {
     companion object {
         fun toResponse(b: Board) = BoardResponse(
             id = b.id!!,
             name = b.name,
             projectId = b.project.id!!,
-            status = b.status
+            status = b.status,
+            createdBy = b.createdBy,
+            createdAt = b.createdDate,
+            updatedAt = b.modifiedDate,
+            updatedBy = b.lastModifiedBy
         )
     }
 }
 
 data class CreateWorkflowRequest(
+    val boardId:Long,
     val name: String
 )
 
@@ -77,13 +95,23 @@ data class UpdateWorkflowRequest(
 data class WorkflowResponse(
     val id: Long,
     val name: String,
-    val organizationId: Long
+    val organizationId: Long?,
+    val boardId:Long?,
+    val createdBy:Long?,
+    val createdAt:Date?,
+    val updatedAt:Date? = null,
+    val updatedBy:Long? = null,
 ) {
     companion object {
         fun toResponse(w: Workflow) = WorkflowResponse(
             w.id!!,
             w.name,
-            w.organizationId!!
+            w.organizationId,
+            w.board?.id,
+            w.createdBy,
+            w.createdDate,
+            w.modifiedDate,
+            w.lastModifiedBy
         )
     }
 }
@@ -107,7 +135,11 @@ data class StateResponse(
     val workflowId: Long,
     val name: String,
     val orderNumber: Long,
-    val permission: Permission
+    val permission: Permission,
+    val createdBy:Long?,
+    val createdAt:Date?,
+    val updatedAt:Date? = null,
+    val updatedBy:Long? = null,
 ) {
     companion object {
         fun toResponse(s: State) = StateResponse(
@@ -115,7 +147,11 @@ data class StateResponse(
             workflowId = s.workflow.id!!,
             name = s.name,
             orderNumber = s.orderNumber,
-            permission = s.permission
+            permission = s.permission,
+            createdBy = s.createdBy,
+            createdAt = s.createdDate,
+            updatedAt = s.modifiedDate,
+            updatedBy = s.lastModifiedBy
         )
     }
 }
@@ -141,6 +177,16 @@ data class ChangeTaskStateRequest(
     val stateId: Long
 )
 
+data class AssignTaskRequest(
+    val taskId: Long,
+    val employeeId: Long
+)
+
+data class RemoveAssigneeRequest(
+    val taskId: Long,
+    val employeeId: Long
+)
+
 data class TaskResponse(
     val id: Long,
     val boardId: Long,
@@ -148,7 +194,11 @@ data class TaskResponse(
     val title: String,
     val description: String,
     val ownerId: Long,
-    val deadline: Date?
+    val deadline: Date?,
+    val createdBy:Long?,
+    val createdAt:Date?,
+    val updatedAt:Date? = null,
+    val updatedBy:Long? = null,
 ) {
     companion object {
         fun toResponse(t: Task) = TaskResponse(
@@ -158,7 +208,11 @@ data class TaskResponse(
             title = t.title,
             description = t.description,
             ownerId = t.ownerId,
-            deadline = t.deadline
+            deadline = t.deadline,
+            createdBy = t.createdBy,
+            createdAt = t.createdDate,
+            updatedAt = t.modifiedDate,
+            updatedBy = t.lastModifiedBy
         )
     }
 }
@@ -187,7 +241,7 @@ data class TaskResponseMedia(
 }
 
 
-@JsonIgnoreProperties(ignoreUnknown = true) // Tokenda bor lekin klassda yo'q maydonlarni e'tiborsiz qoldiradi
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class UserInfoResponse(
     @JsonProperty("uid")
     val id: Long,
@@ -198,7 +252,6 @@ data class UserInfoResponse(
     @JsonProperty("rol")
     val role: String,
 
-    // Agar tokenda 'enabled' bo'lmasa, default qiymat berish yoki nullable qilish kerak
     val enabled: Boolean = true,
 
     @JsonProperty("eid")

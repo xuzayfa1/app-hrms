@@ -44,6 +44,12 @@ class Project(
     @Enumerated(EnumType.STRING)var status: Status = Status.ACTIVE,
 ):BaseEntity()
 
+//@Entity
+//@Table(name = "project_assignees")
+//class ProjectAssignee(
+//
+//):BaseEntity()
+
 @Entity
 @Table(name = "boards")
 class Board(
@@ -57,6 +63,8 @@ class Board(
 class Workflow(
 
     @Column(nullable = false) var name: String,
+
+    @ManyToOne(fetch = FetchType.LAZY) var board: Board? = null,
 
     var organizationId: Long? = null
 

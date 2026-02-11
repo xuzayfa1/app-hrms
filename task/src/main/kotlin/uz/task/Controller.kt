@@ -132,7 +132,7 @@ class StateController(
 }
 
 @RestController
-@RequestMapping("/api/tasks")
+@RequestMapping("tasks")
 class TaskController(
     private val taskService: TaskService
 ) {
@@ -159,6 +159,16 @@ class TaskController(
     @PutMapping("/state")
     fun changeState(@RequestBody req: ChangeTaskStateRequest): TaskResponse {
         return taskService.changeState(req)
+    }
+
+    @PostMapping("/assign")
+    fun assignTask(@RequestBody req: AssignTaskRequest) {
+        taskService.assignTask(req)
+    }
+
+    @PostMapping("/remove-assignee")
+    fun removeAssignee(@RequestBody req: RemoveAssigneeRequest) {
+        taskService.removeAssignee(req)
     }
 }
 

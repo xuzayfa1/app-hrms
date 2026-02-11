@@ -109,7 +109,37 @@ class StateInUseException : TaskException() {
     override fun errorType() = ErrorCode.STATE_IN_USE
 }
 
+class ProjectArchivedException : TaskException() {
+    override fun errorType() = ErrorCode.PROJECT_ARCHIVED
+}
 
+class BoardArchivedException : TaskException() {
+    override fun errorType() = ErrorCode.BOARD_ARCHIVED
+}
+
+class InvalidStateOrderNumberException : TaskException() {
+    override fun errorType() = ErrorCode.INVALID_STATE_ORDER_NUMBER
+}
+
+class InvalidStateOrderException : TaskException() {
+    override fun errorType() = ErrorCode.INVALID_STATE_ORDER
+}
+
+class WorkflowNotEmptyException : TaskException() {
+    override fun errorType() = ErrorCode.WORKFLOW_NOT_EMPTY
+}
+
+class EmployeeNotInOrganizationException : TaskException() {
+    override fun errorType() = ErrorCode.EMPLOYEE_NOT_IN_ORGANIZATION
+}
+
+class EmployeeAlreadyAssignedException : TaskException() {
+    override fun errorType() = ErrorCode.EMPLOYEE_ALREADY_ASSIGNED
+}
+
+class AssigneeNotFoundException : TaskException() {
+    override fun errorType() = ErrorCode.ASSIGNEE_NOT_FOUND
+}
 
 class FeignException(
     private val code: Int?,

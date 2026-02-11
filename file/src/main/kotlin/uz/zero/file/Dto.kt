@@ -1,6 +1,7 @@
 package uz.zero.file
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonProperty
 import org.springframework.web.multipart.MultipartFile
 
 
@@ -43,8 +44,23 @@ data class FileGetDto(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class UserInfoResponse(
+    @JsonProperty("uid")
     val id: Long,
-    val fullName: String,
+
+    @JsonProperty("sub")
     val username: String,
+
+    @JsonProperty("rol")
     val role: String,
+
+    val enabled: Boolean = true,
+
+    @JsonProperty("eid")
+    val employeeId: Long,
+
+    @JsonProperty("per")
+    val employeeRole: String,
+
+    @JsonProperty("oid")
+    val currentOrganizationId: Long
 )

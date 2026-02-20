@@ -2,7 +2,6 @@ package uz.zero.notification
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
-import java.time.Instant
 
 data class BaseMessage(val code: Int? = null, val message: String? = null) {
     companion object {
@@ -33,26 +32,5 @@ data class UserInfoResponse(
     @JsonProperty("oid")
     val currentOrganizationId: Long
 )
-
-data class TaskStateChangedEvent(
-    val eventId: String,
-    val eventType: String,
-    val taskId: Long,
-    val oldState: String?,
-    val newState: String?,
-    val assignedUserIds: List<Long>,
-    val changedAt: Instant,
-
-    val organizationName: String?,
-    val projectName: String?,
-    val ownerName: String?,
-    val title: String?
-)
-data class TaskEvent(
-    val taskId: Long,
-    val action: String,
-    val timestamp: Long = System.currentTimeMillis()
-)
-
 
 

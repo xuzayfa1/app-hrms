@@ -46,14 +46,21 @@ class BaseRepositoryImpl<T : BaseEntity>(
 }
 
 
-interface TelegramUserRepository : BaseRepository<TelegramUser>
+interface TelegramUserRepository : BaseRepository<TelegramUser>{
+    fun findByUserIdAndActiveTrue(userId: Long): TelegramUser?
+    fun findByUserIdAndDeletedFalse(userId: Long): TelegramUser?
+    fun existsByChatIdAndDeletedFalse(chatId: Long): Boolean
+}
 
 interface TelegramLinkTokenRepository : BaseRepository<TelegramLinkToken>{
     fun existsByHashId(token: String): Boolean
     fun findByHashIdAndUsedFalse(hash: String): TelegramLinkToken?
 }
 
-interface NotificationRepository : BaseRepository<Notification>
+interface NotificationRepository : BaseRepository<Notification>{
+    fun findTop30ByStatusOrderByCreatedDateAsc(status: NotificationStatus): List<Notification>
+
+}
 
 interface TaskEventLogRepository : BaseRepository<TaskEventLog> {
     fun findAllBySentFalse(): List<TaskEventLog>

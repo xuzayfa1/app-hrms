@@ -112,8 +112,8 @@ class TaskAction(
 
     @Column(nullable = false)var employeeId: Long,
     @Column(nullable = false) var employeeName: String,
-    var from: String? = null,
-    var to: String? = null,
+    var fromState: String? = null,
+    var toState: String? = null,
     var title: String? = null,
     @ManyToOne(fetch = FetchType.LAZY) var assignee: TaskAssignee? = null,
     @Column(columnDefinition = "text")var fileAttach: String? = null,

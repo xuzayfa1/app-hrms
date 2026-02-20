@@ -53,6 +53,5 @@ enum class TaskActionType {
     DEADLINE_CHANGED,
     FILE_ATTACHED,
     ASSIGNEE_ADDED,
-    ASSIGNEE_REMOVED,
     STATE_CHANGED
 }

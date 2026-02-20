@@ -306,20 +306,19 @@ data class UserResponse(
 )
 
 data class TaskActionEvent(
-    val type: TaskActionType,
-    val orgId: Long,
+
+    val orgName: String,
     val taskId: Long,
-    val boardId: Long,
 
-    val actorEmployeeId: Long,
-    val actorName: String,
+    val ownerEmployeeId: Long,
+    val ownerName: String,
 
-    val recipients: List<Long>,
+    val assignees: List<Long>,
 
     val fromStateId: Long? = null,
     val toStateId: Long? = null,
 
-    val newTitle: String? = null,
+    val newTitle: String,
     val assigneeEmployeeId: Long? = null,
     val newFileAttach: List<String>? = null,
     val newDeadline: Date? = null,

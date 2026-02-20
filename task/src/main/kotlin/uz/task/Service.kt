@@ -443,8 +443,8 @@ class TaskServiceImpl(
             employeeId = employeeId(),
             employeeName = username(),
             type = type,
-            from = from,
-            to = to,
+            fromState = from,
+            toState = to,
             title = title,
             assignee = assignee,
             fileAttach = fileAttach?.let { objectMapper.writeValueAsString(it) },
@@ -644,7 +644,15 @@ class TaskServiceImpl(
         if (isOwner) {
             task.state = newState
             task.lastModifiedBy = employeeId()
-            return TaskResponse.toResponse(taskRepository.save(task))
+            val saved = taskRepository.save(task)
+            saveAction(
+                task = saved,
+                type = TaskActionType.STATE_CHANGED,
+                from = currentState.name,
+                to = newState.name
+            )
+
+            return TaskResponse.toResponse(saved)
         }
 
         // Assignee
@@ -657,7 +665,16 @@ class TaskServiceImpl(
                 if (step == 1L) {
                     task.state = newState
                     task.lastModifiedBy = employeeId()
-                    return TaskResponse.toResponse(taskRepository.save(task))
+                    val saved = taskRepository.save(task)
+                    saveAction(
+                        task = saved,
+                        type = TaskActionType.STATE_CHANGED,
+                        from = currentState.name,
+                        to = newState.name
+                    )
+
+                    return TaskResponse.toResponse(saved)
+
                 }
             }
         }
@@ -704,6 +721,12 @@ class TaskServiceImpl(
         taskAssignee.createdBy = employeeId()
         taskAssigneeRepository.save(taskAssignee)
 
+        saveAction(
+            task = task,
+            type = TaskActionType.ASSIGNEE_ADDED,
+            assignee = taskAssignee,
+        )
+
     }
 
     @Transactional
@@ -718,7 +741,8 @@ class TaskServiceImpl(
             ?: throw AssigneeNotFoundException()
 
         taskAssigneeRepository.trash(assignee.id!!)
-
     }
+
+
 }
 

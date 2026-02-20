@@ -19,7 +19,10 @@ import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.LastModifiedBy
 import org.springframework.data.annotation.LastModifiedDate
 import org.springframework.data.jpa.domain.support.AuditingEntityListener
+import java.text.SimpleDateFormat
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Date
 
 
@@ -36,14 +39,14 @@ class BaseEntity(
 
 @Entity
 class TelegramUser(
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     var userId: Long,
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     var chatId: Long,
 
     @Column(nullable = false)
-    var isActive: Boolean = true,
+    var active: Boolean = true,
 
     @Column(nullable = false)
     var linkedAt: Instant = Instant.now(),
@@ -72,14 +75,9 @@ class TelegramLinkToken(
 
 
 @Entity
-@Table(
-    indexes = [
-        Index(name = "idx_notification_status_created", columnList = "status, createdDate")
-    ]
-)
 class Notification(
     @Column(nullable = false)
-    var employeeId: Long,
+    var userId: Long,
 
     @Column(nullable = false)
     var organizationName: String,
@@ -93,9 +91,10 @@ class Notification(
     @Column(nullable = false, columnDefinition = "TEXT")
     var title: String,
 
-    var oldStatus: String? = null,
+    @Column(nullable = false)
+    var oldState: String,
 
-    var newStatus: String? = null,
+    var newState: String? = "",
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -104,18 +103,15 @@ class Notification(
     @Column(columnDefinition = "TEXT")
     var error: String? = null,
 
-    var sentAt: Date? = null,
-) : BaseEntity()
+    var actionDate: Date? = null,
 
 
-//---------------------------------
 
-@Entity
-@Table(name = "task_event_log")
-data class TaskEventLog(
-    val taskId: Long,
-    val action: String,
-    val timestamp: Long,
-    @Temporal(TemporalType.TIMESTAMP) val createdAt: Date = Date(),
-    var sent: Boolean = false
-): BaseEntity()
+) : BaseEntity(){
+    fun getFormattedDate(): String {
+        if (actionDate == null) return "Unknown"
+        val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm")
+        return formatter.format(actionDate)
+    }
+}
+

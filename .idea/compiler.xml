@@ -8,6 +8,9 @@
       <module name="file.main" options="-parameters" />
       <module name="file.test" options="-parameters" />
       <module name="gateway" options="-parameters" />
+      <module name="notification" options="-parameters" />
+      <module name="notification.main" options="-parameters" />
+      <module name="notification.test" options="-parameters" />
       <module name="task" options="-parameters" />
       <module name="user" options="-parameters" />
       <module name="user.main" options="-parameters" />

@@ -273,6 +273,14 @@ data class UserInfoResponse(
     @JsonProperty("oid")
     val currentOrganizationId: Long
 )
+//--------------------
+
+data class TaskEvent(
+    val taskId: Long,
+    val action: String, // CREATE, UPDATE, DELETE, CHANGE_STATE
+    val timestamp: Long = System.currentTimeMillis()
+)
+
 
 data class EmployeeDetailResponse(
     val id: Long,

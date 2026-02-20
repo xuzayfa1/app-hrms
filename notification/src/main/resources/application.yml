@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: notification
+  cloud:
+    config:
+      uri: ${CONFIG_URI:http://localhost:8888}
+      password: ${CONFIG_PASSWORD:nimadirxavfsizlik}
+      username: user
+  config:
+    import: 'configserver:'
+  profiles:
+    active: local
+
+telegram:
+  bot:
+    token: "5071591755:AAEYuNMZc6vIcbSsd9a20ws3ZRhIklVt1is"
+    username: "taribaga_uchun_bot"

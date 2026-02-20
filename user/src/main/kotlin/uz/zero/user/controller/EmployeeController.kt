@@ -6,7 +6,7 @@ import uz.zero.user.*
 import uz.zero.user.services.EmployeeService
 
 @RestController
-@RequestMapping("/api/employees")
+@RequestMapping("employees")
 class EmployeeController(
     private val employeeService: EmployeeService
 ) {

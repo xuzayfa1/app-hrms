@@ -37,21 +37,14 @@ class BaseEntity(
 
 
 @Entity
-@Table(name = "projects")
 class Project(
     @Column(nullable = false) var name: String,
     @Column(nullable = false) var organizationId: Long,
     @Enumerated(EnumType.STRING)var status: Status = Status.ACTIVE,
 ):BaseEntity()
 
-//@Entity
-//@Table(name = "project_assignees")
-//class ProjectAssignee(
-//
-//):BaseEntity()
 
 @Entity
-@Table(name = "boards")
 class Board(
     @Column(nullable = false) var name: String,
     @ManyToOne(fetch = FetchType.LAZY) var project: Project,
@@ -59,7 +52,6 @@ class Board(
 ):BaseEntity()
 
 @Entity
-@Table(name = "workflows")
 class Workflow(
 
     @Column(nullable = false) var name: String,
@@ -72,7 +64,6 @@ class Workflow(
 
 
 @Entity
-@Table(name = "states")
 class State(
 
     @Column(nullable = false) var name: String,
@@ -85,7 +76,6 @@ class State(
 
 
 @Entity
-@Table(name = "tasks")
 class Task(
     @Column(nullable = false)var title: String,
     @Column(nullable = false)var description: String,
@@ -97,7 +87,7 @@ class Task(
 
 @Entity
 @Table(
-    name = "task_assignees",
+    name = "task_assignee",
     uniqueConstraints = [
         UniqueConstraint(columnNames = ["task_id", "employee_id"])
     ]
@@ -108,8 +98,28 @@ class TaskAssignee(
 ) : BaseEntity()
 
 @Entity
-@Table(name = "task_media")
 class TaskMedia(
     @ManyToOne(fetch = FetchType.LAZY) var task: Task,
     @Column(nullable = false)var hashId: String
+):BaseEntity()
+
+@Entity
+class TaskAction(
+    @ManyToOne(fetch = FetchType.LAZY) var task: Task,
+
+    @Enumerated(EnumType.STRING) @Column(nullable = false)
+    var type: TaskActionType,
+
+    @Column(nullable = false)var employeeId: Long,
+    @Column(nullable = false) var employeeName: String,
+    var fromState: String? = null,
+    var toState: String? = null,
+    var title: String? = null,
+    @ManyToOne(fetch = FetchType.LAZY) var assignee: TaskAssignee? = null,
+    @Column(columnDefinition = "text")var fileAttach: String? = null,
+    var deadline: Date? = null,
+
+//    @Column(columnDefinition = "text") var data: String? = null
+
+
 ):BaseEntity()

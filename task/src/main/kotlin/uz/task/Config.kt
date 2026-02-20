@@ -1,15 +1,19 @@
 package uz.task
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import feign.RequestInterceptor
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.support.ResourceBundleMessageSource
 import org.springframework.core.convert.converter.Converter
+import org.springframework.http.HttpHeaders
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.oauth2.core.OAuth2AccessToken.TokenType.BEARER
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 
@@ -68,5 +72,18 @@ class ResourceServerConfig(
                 details = userDetails
             }
         }
+    }
+}
+
+class FeignOAuth2TokenConfig {
+    @Bean
+    fun feignOAuth2TokenInterceptor() = RequestInterceptor { requestTemplate ->
+        val userDetails = getHeader(USER_DETAILS_HEADER_KEY)
+        val accessToken = SecurityContextHolder
+            .getContext()
+            .authentication as JwtAuthenticationToken
+
+        requestTemplate.header(HttpHeaders.AUTHORIZATION, "${BEARER.value} ${accessToken.token.tokenValue}")
+        requestTemplate.header(USER_DETAILS_HEADER_KEY, userDetails)
     }
 }

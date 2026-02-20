@@ -46,20 +46,20 @@ fun username(): String {
 fun userId(): Long {
     return getUserJwtPrincipal()?.claims?.get(USER_ID_KEY) as Long
 }
-fun orgId1(): Long {
+
+fun orgId(): Long {
     return getUserJwtPrincipal()?.claims?.get(ORG_ID_KEY) as Long
 }
 
-fun employeeId1(): Long {
+fun employeeId(): Long {
     return getUserJwtPrincipal()?.claims?.get(EMPLOYEE_ID_KEY) as Long
 }
 
-fun employeePosition1(): String {
+fun employeePos(): String {
     return getUserJwtPrincipal()?.claims?.get(EMPLOYEE_POS_KEY) as String
 }
 
-object Context {
-    fun orgId(): Long = orgId1()
-    fun employeeId(): Long = employeeId1()
-    fun employeePos(): String = employeePosition1()
+fun hasManager(){
+    val permission = employeePos()
+    if (permission != EmployeeRole.MANAGER.name) throw AccessDeniedException()
 }

@@ -3,9 +3,9 @@ server:
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/hr_file_db
+    url: jdbc:postgresql://localhost:5432/hrms_db
     username: postgres
-    password: 1012
+    password: 1
   jpa:
     open-in-view: false
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -16,7 +16,7 @@ spring:
         jdbc:
           lob:
             non_contextual_creation: true
-        default_schema: file_schema
+        default_schema: file
     hibernate:
       naming:
         implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl

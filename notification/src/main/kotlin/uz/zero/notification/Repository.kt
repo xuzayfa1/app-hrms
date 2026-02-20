@@ -55,4 +55,6 @@ interface TelegramLinkTokenRepository : BaseRepository<TelegramLinkToken>{
 
 interface NotificationRepository : BaseRepository<Notification>
 
-
+interface TaskEventLogRepository : BaseRepository<TaskEventLog> {
+    fun findAllBySentFalse(): List<TaskEventLog>
+}

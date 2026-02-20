@@ -107,3 +107,15 @@ class Notification(
     var sentAt: Date? = null,
 ) : BaseEntity()
 
+
+//---------------------------------
+
+@Entity
+@Table(name = "task_event_log")
+data class TaskEventLog(
+    val taskId: Long,
+    val action: String,
+    val timestamp: Long,
+    @Temporal(TemporalType.TIMESTAMP) val createdAt: Date = Date(),
+    var sent: Boolean = false
+): BaseEntity()

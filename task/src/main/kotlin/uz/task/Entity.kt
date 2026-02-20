@@ -44,11 +44,6 @@ class Project(
     @Enumerated(EnumType.STRING)var status: Status = Status.ACTIVE,
 ):BaseEntity()
 
-//@Entity
-//@Table(name = "project_assignees")
-//class ProjectAssignee(
-//
-//):BaseEntity()
 
 @Entity
 @Table(name = "boards")

@@ -1,8 +1,6 @@
 package uz.task
 
 
-
-
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.web.bind.annotation.GetMapping
@@ -90,6 +88,7 @@ class WorkflowController(
     fun create(@RequestBody req: CreateWorkflowRequest): WorkflowResponse {
         return workflowService.create(req)
     }
+
     @PutMapping
     fun update(@RequestBody req: UpdateWorkflowRequest) = workflowService.update(req)
 
@@ -142,14 +141,17 @@ class TaskController(
         return taskService.create(req)
     }
 
-    @PutMapping fun update(@RequestBody req: UpdateTaskRequest) = taskService.update(req)
+    @PutMapping
+    fun update(@RequestBody req: UpdateTaskRequest) = taskService.update(req)
 
-    @GetMapping("/{id}") fun getOne(@PathVariable id: Long) = taskService.getOne(id)
+    @GetMapping("/{id}")
+    fun getOne(@PathVariable id: Long) = taskService.getOne(id)
 
     @GetMapping("/my")
     fun myTasks(pageable: Pageable) = taskService.getMyTasks(pageable)
 
-    @PostMapping("/delete/{id}") fun delete(@PathVariable id: Long) = taskService.delete(id)
+    @PostMapping("/delete/{id}")
+    fun delete(@PathVariable id: Long) = taskService.delete(id)
 
     @GetMapping
     fun getAllByBoardId(@RequestParam boardId: Long, pageable: Pageable): Page<TaskResponseMedia> {

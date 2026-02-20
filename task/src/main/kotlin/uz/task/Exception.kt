@@ -1,8 +1,12 @@
 package uz.task
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import feign.Response
+import feign.codec.ErrorDecoder
 import org.springframework.context.i18n.LocaleContextHolder
 import org.springframework.context.support.ResourceBundleMessageSource
 import org.springframework.http.ResponseEntity
+import org.springframework.stereotype.Component
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import java.util.Locale
@@ -150,6 +154,36 @@ class FeignException(
 
     fun toBaseMessage() = BaseMessage(code, messageValue)
 
+}
+
+@Component
+class CustomFeignErrorDecoder(
+    private val objectMapper: ObjectMapper = ObjectMapper()
+) : ErrorDecoder {
+
+    override fun decode(methodKey: String, response: Response): Exception {
+
+        val body = response.body()
+            ?.asInputStream()
+            ?.readBytes()
+            ?.toString(Charsets.UTF_8)
+
+        if (body.isNullOrBlank()) {
+            return feign.FeignException.errorStatus(methodKey, response)
+        }
+
+        return try {
+            val baseMessage = objectMapper.readValue(body, BaseMessage::class.java)
+
+            FeignException(
+                code = baseMessage.code,
+                messageValue = baseMessage.message
+            )
+
+        } catch (e: Exception) {
+            feign.FeignException.errorStatus(methodKey, response)
+        }
+    }
 }
 
 

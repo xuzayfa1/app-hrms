@@ -124,9 +124,18 @@ interface TaskRepository : BaseRepository<Task> {
 interface TaskAssigneeRepository : BaseRepository<TaskAssignee> {
     fun existsByTaskIdAndEmployeeIdAndDeletedFalse(taskId: Long, employeeId: Long): Boolean
     fun findByTaskIdAndEmployeeIdAndDeletedFalse(taskId: Long, employeeId: Long): TaskAssignee?
+
+    @Query("""
+        select a.employeeId from TaskAssignee a
+        where a.task.id = :taskId and a.deleted = false
+    """)
+    fun findAssigneeIds(@Param("taskId") taskId: Long): List<Long>
 }
 
 @Repository
 interface TaskMediaRepository : BaseRepository<TaskMedia> {
     fun findAllByTask(task: Task): List<TaskMedia>
 }
+
+@Repository
+interface TaskActionRepository : BaseRepository<TaskAction>

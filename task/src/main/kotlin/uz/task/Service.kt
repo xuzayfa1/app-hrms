@@ -5,6 +5,8 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.util.Date
 
 
@@ -383,7 +385,7 @@ class StateServiceImpl(
     override fun getOne(id: Long): StateResponse {
         val s = stateRepository.findByIdAndDeletedFalse(id) ?: throw StateNotFoundException()
 
-        // system state ham ko‘rinadi
+        // system state ham korinadi
         val wOrg = s.workflow.organizationId
         if (wOrg != null && wOrg != orgId()) throw AccessDeniedException()
 
@@ -425,7 +427,8 @@ class TaskServiceImpl(
     private val taskMediaRepository: TaskMediaRepository,
     private val employeeFeignClient: EmployeeFeignClient,
     private val taskActionRepository: TaskActionRepository,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val taskKafkaProducer: TaskKafkaProducer
 ) : TaskService {
 
     private fun saveAction(
@@ -435,13 +438,17 @@ class TaskServiceImpl(
         to: String? = null,
         title: String? = null,
         assignee: TaskAssignee? = null,
-        fileAttach: Map<String,List<String>?>? = null,
-        deadline: Date? = null
+        fileAttach: Map<String, List<String>?>? = null,
+        deadline: Date? = null,
     ) {
+
+        val employee = employeeFeignClient.getEmployee(employeeId())
+
+        val empFullName = employee.user.firstName+" "+employee.user.lastName
         val action = TaskAction(
             task = task,
             employeeId = employeeId(),
-            employeeName = username(),
+            employeeName = empFullName,
             type = type,
             fromState = from,
             toState = to,
@@ -452,6 +459,39 @@ class TaskServiceImpl(
         )
         action.createdBy = employeeId()
         taskActionRepository.save(action)
+
+        if (type == TaskActionType.CREATED) return
+
+        val assignees = taskAssigneeRepository.findAssigneeIds(task.id!!)
+
+        val files: List<String>? = fileAttach?.get("fileHashId")
+
+        val event = TaskEvent(
+            orgName = employee.organization.name,
+            taskId = task.id!!,
+
+            ownerEmployeeId = task.ownerId,
+            ownerName = empFullName,
+
+            assignees = assignees,
+
+            newTitle = task.title,
+
+            assigneeEmployeeId = assignee?.employeeId,
+            newFileAttach = files,
+            newDeadline = deadline
+        )
+
+        // Transaction commit bolgandan keyin Kafkaga yuborish
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
+                override fun afterCommit() {
+                    taskKafkaProducer.send(event)
+                }
+            })
+        } else {
+            taskKafkaProducer.send(event)
+        }
     }
 
 

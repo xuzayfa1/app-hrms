@@ -7,15 +7,15 @@ spring:
         issuer: http://localhost:8089
   data:
     mongodb:
-      uri: mongodb://localhost/demo_auth
+      uri: mongodb://localhost:27017/demo_auth
       auto-index-creation: true
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: ${PG_URL:jdbc:postgresql://localhost:5432/hr_auth_db}
+    url: ${PG_URL:jdbc:postgresql://localhost:5432/hrms_db}
     username: ${PG_USER:postgres}
-    password: ${PG_PASSWORD:1012}
+    password: ${PG_PASSWORD:1}
     hikari:
-      schema: auth_schema
+      schema: auth
   jpa:
     open-in-view: false
     database-platform: org.hibernate.dialect.PostgreSQLDialect

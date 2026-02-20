@@ -47,3 +47,12 @@ enum class EmployeeRole {
     EMPLOYEE
 }
 
+enum class TaskActionType {
+    CREATED,
+    TITLE_CHANGED,
+    DEADLINE_CHANGED,
+    FILE_ATTACHED,
+    ASSIGNEE_ADDED,
+    ASSIGNEE_REMOVED,
+    STATE_CHANGED
+}

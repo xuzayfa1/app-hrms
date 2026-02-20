@@ -3,6 +3,7 @@ package uz.task
 import java.util.Date
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
+import java.time.LocalDateTime
 
 
 data class BaseMessage(val code: Int? = null, val message: String? = null) {
@@ -169,7 +170,8 @@ data class UpdateTaskRequest(
     val id: Long,
     val title: String? = null,
     val description: String? = null,
-    val deadline: Date? = null
+    val deadline: Date? = null,
+    val medias: List<String>? = null,
 )
 
 data class ChangeTaskStateRequest(
@@ -187,10 +189,15 @@ data class RemoveAssigneeRequest(
     val employeeId: Long
 )
 
+
+data class StateDto(
+    val id: Long,
+    val name: String,
+)
 data class TaskResponse(
     val id: Long,
     val boardId: Long,
-    val stateId: Long,
+    val state: StateDto,
     val title: String,
     val description: String,
     val ownerId: Long,
@@ -204,7 +211,10 @@ data class TaskResponse(
         fun toResponse(t: Task) = TaskResponse(
             id = t.id!!,
             boardId = t.board.id!!,
-            stateId = t.state.id!!,
+            state = StateDto(
+                id = t.state.id!!,
+                name = t.state.name
+            ),
             title = t.title,
             description = t.description,
             ownerId = t.ownerId,
@@ -264,4 +274,55 @@ data class UserInfoResponse(
     val currentOrganizationId: Long
 )
 
+data class EmployeeDetailResponse(
+    val id: Long,
+    val user: UserResponse,
+    val organization: OrganizationResponse,
+    val role: EmployeeRole,
+    val isActive: Boolean,
+    val joinedAt: LocalDateTime
+)
+
+data class OrganizationResponse(
+    val id: Long,
+    val name: String,
+    val description: String?,
+    val isActive: Boolean,
+    val createdBy: Long?,
+    val createdAt: Date,
+    val updatedAt: Date
+)
+
+data class UserResponse(
+    val id: Long,
+    val username: String,
+    val email: String,
+    val firstName: String,
+    val lastName: String,
+    val isActive: Boolean,
+    val currentOrgId: Long?,
+    val createdAt: Date,
+    val updatedAt: Date
+)
+
+data class TaskActionEvent(
+    val type: TaskActionType,
+    val orgId: Long,
+    val taskId: Long,
+    val boardId: Long,
+
+    val actorEmployeeId: Long,
+    val actorName: String,
+
+    val recipients: List<Long>,
+
+    val fromStateId: Long? = null,
+    val toStateId: Long? = null,
+
+    val newTitle: String? = null,
+    val assigneeEmployeeId: Long? = null,
+    val newFileAttach: List<String>? = null,
+    val newDeadline: Date? = null,
+
+)
 

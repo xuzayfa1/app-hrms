@@ -165,7 +165,7 @@ class NotificationServiceImpl(
 
         lines += "📌 Topshiriq yangilandi"
         lines += "🕒 ${event.createdDate ?: Date()}"
-        lines += "🏢 ${event.orgName}"
+        lines += "🏢 Tashkilot: ${event.orgName}"
         lines += "📚 Loyiha: ${event.projectName}"
         lines += "👨‍💼 Harakat egasi: ${event.ownerName}"
         lines += "💾 Sarlavha: ${event.newTitle}"

@@ -86,12 +86,6 @@ class Task(
 ):BaseEntity()
 
 @Entity
-@Table(
-    name = "task_assignee",
-    uniqueConstraints = [
-        UniqueConstraint(columnNames = ["task_id", "employee_id"])
-    ]
-)
 class TaskAssignee(
     @ManyToOne(fetch = FetchType.LAZY) var task: Task,
     @Column(nullable = false) var employeeId: Long

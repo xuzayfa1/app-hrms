@@ -3,12 +3,15 @@ package uz.task
 import java.util.Date
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
+import jakarta.persistence.Column
+import jakarta.persistence.FetchType
+import jakarta.persistence.ManyToOne
 import java.time.LocalDateTime
 
 
 data class BaseMessage(val code: Int? = null, val message: String? = null) {
     companion object {
-        var OK = BaseMessage(0, "OK")
+        val OK = BaseMessage(0, "OK")
     }
 }
 
@@ -328,4 +331,28 @@ data class TaskEvent(
     val createdDate: Date? = null,
 
 )
+
+data class ActionResponse(
+    val type: TaskActionType,
+    val actionOwner:String,
+    val fromState: String? = null,
+    val toState: String? = null,
+    val title: String? = null,
+    val assignee: TaskAssignee? = null,
+    val fileAttach: String? = null,
+    val deadline: Date? = null,
+){
+    companion object{
+        fun toResponse(t: TaskAction) = ActionResponse(
+            type = t.type,
+            actionOwner = t.employeeName,
+            fromState = t.fromState,
+            toState = t.toState,
+            title = t.title,
+            assignee = t.assignee,
+            fileAttach = t.fileAttach,
+            deadline = t.deadline,
+        )
+    }
+}
 

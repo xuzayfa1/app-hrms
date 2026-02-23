@@ -654,7 +654,6 @@ class TaskServiceImpl(
             createdDate = Date()
         )
 
-        println("date==============================================================================="+Date())
 
         if (TransactionSynchronizationManager.isActualTransactionActive()) {
             TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
@@ -841,9 +840,28 @@ class TaskServiceImpl(
         val assignee = taskAssigneeRepository.findByTaskIdAndEmployeeIdAndDeletedFalse(req.taskId, req.employeeId)
             ?: throw AssigneeNotFoundException()
 
-        taskAssigneeRepository.delete(assignee)
+        taskAssigneeRepository.trash(assignee.id!!)
     }
 
 
 }
+
+
+interface ActionService{
+    fun getAllByTaskId(id:Long,pageable: Pageable): Page<ActionResponse>
+}
+
+@Service
+class ActionServiceImpl(
+    private val actionRepository: TaskActionRepository
+): ActionService{
+    override fun getAllByTaskId(id: Long, pageable: Pageable): Page<ActionResponse> {
+        return actionRepository.findAllByTaskId(id,pageable).map {
+            ActionResponse.toResponse(it)
+        }
+    }
+
+}
+
+
 

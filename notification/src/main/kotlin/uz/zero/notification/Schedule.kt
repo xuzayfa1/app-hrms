@@ -9,7 +9,7 @@ class NotificationScheduler(
     private val notificationService: NotificationService
 ) {
 
-    @Scheduled(fixedDelay = 1000, initialDelay = 25000)
+    @Scheduled(fixedDelay = 1000, initialDelay = 2000)
     fun sync() {
         notificationService.sendNotification()
     }

@@ -314,15 +314,18 @@ data class TaskEvent(
     val ownerEmployeeId: Long,
     val ownerName: String,
 
+    val projectName: String? = null,
     val assignees: List<Long>,
 
-    val fromStateId: Long? = null,
-    val toStateId: Long? = null,
+    val fromState: String? = null,
+    val toState: String? = null,
 
     val newTitle: String,
     val assigneeEmployeeId: Long? = null,
     val newFileAttach: List<String>? = null,
     val newDeadline: Date? = null,
+
+    val createdDate: Date? = null,
 
 )
 

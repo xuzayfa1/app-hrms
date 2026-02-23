@@ -47,7 +47,11 @@ class TelegramNotificationBot(
     }
 
     fun sendNotification(chatId: Long, text: String) {
-        val message = SendMessage(chatId.toString(), text)
+        val message = SendMessage()
+        message.chatId = chatId.toString()
+        message.text = text
+        message.parseMode = "HTML"
         execute(message)
+
     }
 }

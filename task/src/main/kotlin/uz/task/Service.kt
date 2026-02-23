@@ -428,7 +428,8 @@ class TaskServiceImpl(
     private val employeeFeignClient: EmployeeFeignClient,
     private val taskActionRepository: TaskActionRepository,
     private val objectMapper: ObjectMapper,
-    private val taskKafkaProducer: TaskKafkaProducer
+//    private val taskKafkaProducer: TaskKafkaProducer,
+    private val notifFeignClient: NotifFeignClient
 ) : TaskService {
 
     private fun saveAction(
@@ -440,15 +441,15 @@ class TaskServiceImpl(
         assignee: TaskAssignee? = null,
         fileAttach: Map<String, List<String>?>? = null,
         deadline: Date? = null,
+        onlySave: Boolean
     ) {
 
         val employee = employeeFeignClient.getEmployee(employeeId())
 
-        val empFullName = employee.user.firstName+" "+employee.user.lastName
         val action = TaskAction(
             task = task,
             employeeId = employeeId(),
-            employeeName = empFullName,
+            employeeName = employee.user.firstName+" "+employee.user.lastName,
             type = type,
             fromState = from,
             toState = to,
@@ -460,7 +461,7 @@ class TaskServiceImpl(
         action.createdBy = employeeId()
         taskActionRepository.save(action)
 
-        if (type == TaskActionType.CREATED) return
+        if (type == TaskActionType.CREATED || onlySave) return
 
         val assignees = taskAssigneeRepository.findAssigneeIds(task.id!!)
 
@@ -471,27 +472,36 @@ class TaskServiceImpl(
             taskId = task.id!!,
 
             ownerEmployeeId = task.ownerId,
-            ownerName = empFullName,
+            ownerName = employee.user.firstName+" "+employee.user.lastName,
 
             assignees = assignees,
+
+            projectName = task.board.project.name,
+            fromState = from,
+            toState = to,
 
             newTitle = task.title,
 
             assigneeEmployeeId = assignee?.employeeId,
             newFileAttach = files,
-            newDeadline = deadline
+            newDeadline = deadline,
+
+            createdDate = action.createdDate,
         )
 
-        // Transaction commit bolgandan keyin Kafkaga yuborish
+        // Transaction commit bolgandan keyin notifga yuborish
         if (TransactionSynchronizationManager.isActualTransactionActive()) {
             TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
                 override fun afterCommit() {
-                    taskKafkaProducer.send(event)
+                    notifFeignClient.setNotif(event)
                 }
             })
         } else {
-            taskKafkaProducer.send(event)
+            notifFeignClient.setNotif(event)
         }
+
+
+
     }
 
 
@@ -544,7 +554,8 @@ class TaskServiceImpl(
             deadline = task.deadline,
             fileAttach = mapOf(
                 "fileHashId" to req.medias
-            )
+            ),
+            onlySave = true
         )
 
 
@@ -583,32 +594,78 @@ class TaskServiceImpl(
         t.lastModifiedBy = employeeId()
         val saved = taskRepository.save(t)
 
+        var changedDeadline: Date? = null
+        var changedFiles: List<String>? = null
 
         if (req.title != null && saved.title != oldTitle) {
             saveAction(
                 task = saved,
                 type = TaskActionType.TITLE_CHANGED,
-                title = saved.title
+                title = saved.title,
+                from = saved.state.name,
+                onlySave = true
             )
         }
 
         if (req.deadline != null && saved.deadline != oldDeadline) {
+            changedDeadline = saved.deadline
             saveAction(
                 task = saved,
                 type = TaskActionType.DEADLINE_CHANGED,
-                deadline = req.deadline
+                deadline = req.deadline,
+                from = saved.state.name,
+                onlySave = true
+
             )
         }
 
         if (req.medias != null) {
+            changedFiles = req.medias
             saveAction(
                 task = saved,
                 type = TaskActionType.FILE_ATTACHED,
                 fileAttach = mapOf(
                     "fileHashId" to req.medias
-                )
+                ),
+                from = saved.state.name,
+                onlySave = true
             )
         }
+
+
+        val employee = employeeFeignClient.getEmployee(employeeId())
+
+
+        val assignees = taskAssigneeRepository.findAssigneeIds(saved.id!!)
+
+        val event = TaskEvent(
+            orgName = employee.organization.name,
+            taskId = saved.id!!,
+            ownerEmployeeId = saved.ownerId,
+            ownerName = employee.user.firstName+" "+employee.user.lastName,
+            assignees = assignees,
+            fromState = saved.state.name,
+            toState = null,
+            projectName = saved.board.project.name,
+            newTitle = saved.title,
+            assigneeEmployeeId = null,
+            newFileAttach = changedFiles,
+            newDeadline = changedDeadline,
+            createdDate = Date()
+        )
+
+        println("date==============================================================================="+Date())
+
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
+                override fun afterCommit() {
+                    notifFeignClient.setNotif(event)
+                }
+            })
+        } else {
+            notifFeignClient.setNotif(event)
+        }
+
 
         return TaskResponse.toResponse(saved)
     }
@@ -689,7 +746,8 @@ class TaskServiceImpl(
                 task = saved,
                 type = TaskActionType.STATE_CHANGED,
                 from = currentState.name,
-                to = newState.name
+                to = newState.name,
+                onlySave = false
             )
 
             return TaskResponse.toResponse(saved)
@@ -710,7 +768,8 @@ class TaskServiceImpl(
                         task = saved,
                         type = TaskActionType.STATE_CHANGED,
                         from = currentState.name,
-                        to = newState.name
+                        to = newState.name,
+                        onlySave = false
                     )
 
                     return TaskResponse.toResponse(saved)
@@ -765,6 +824,8 @@ class TaskServiceImpl(
             task = task,
             type = TaskActionType.ASSIGNEE_ADDED,
             assignee = taskAssignee,
+            from = task.state.name,
+            onlySave = false
         )
 
     }
@@ -780,7 +841,7 @@ class TaskServiceImpl(
         val assignee = taskAssigneeRepository.findByTaskIdAndEmployeeIdAndDeletedFalse(req.taskId, req.employeeId)
             ?: throw AssigneeNotFoundException()
 
-        taskAssigneeRepository.trash(assignee.id!!)
+        taskAssigneeRepository.delete(assignee)
     }
 
 

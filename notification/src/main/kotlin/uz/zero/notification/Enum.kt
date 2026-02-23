@@ -10,3 +10,9 @@ enum class NotificationStatus{
     SENT,
     FAILED
 }
+
+enum class EmployeeRole {
+    ADMIN,
+    MANAGER,
+    EMPLOYEE
+}

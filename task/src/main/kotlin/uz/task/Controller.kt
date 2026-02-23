@@ -133,7 +133,8 @@ class StateController(
 @RestController
 @RequestMapping("tasks")
 class TaskController(
-    private val taskService: TaskService
+    private val taskService: TaskService,
+    private val actionService: ActionService
 ) {
 
     @PostMapping
@@ -156,6 +157,11 @@ class TaskController(
     @GetMapping
     fun getAllByBoardId(@RequestParam boardId: Long, pageable: Pageable): Page<TaskResponseMedia> {
         return taskService.getAllByBoardId(boardId, pageable)
+    }
+
+    @GetMapping("/action/{taskId}")
+    fun getAllActionByTaskId(@PathVariable taskId: Long, pageable: Pageable): Page<ActionResponse> {
+        return actionService.getAllByTaskId(taskId, pageable)
     }
 
     @PutMapping("/state")

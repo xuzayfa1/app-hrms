@@ -138,4 +138,6 @@ interface TaskMediaRepository : BaseRepository<TaskMedia> {
 }
 
 @Repository
-interface TaskActionRepository : BaseRepository<TaskAction>
+interface TaskActionRepository : BaseRepository<TaskAction>{
+    fun findAllByTaskId(id:Long,pageable: Pageable): Page<TaskAction>
+}

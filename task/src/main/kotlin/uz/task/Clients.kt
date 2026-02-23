@@ -11,10 +11,15 @@ import org.springframework.web.bind.annotation.RequestBody
 @FeignClient(name = "user", url = "\${services.hosts.user}",configuration = [FeignOAuth2TokenConfig::class])
 interface EmployeeFeignClient {
 
-    @GetMapping("/{id}")
+    @GetMapping("/employees/{id}")
     fun getEmployee(@PathVariable("id") employeeId: Long): EmployeeDetailResponse
+}
 
+@FeignClient(name = "notification", url = "\${services.hosts.notification}",configuration = [FeignOAuth2TokenConfig::class])
+interface NotifFeignClient {
 
+    @PostMapping("/notifications")
+    fun setNotif(@RequestBody task: TaskEvent)
 }
 
 

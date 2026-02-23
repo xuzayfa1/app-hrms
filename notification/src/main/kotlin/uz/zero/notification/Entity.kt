@@ -82,8 +82,6 @@ class Notification(
     @Column(nullable = false)
     var organizationName: String,
 
-    @Column(nullable = false)
-    var projectName: String,
 
     @Column(nullable = false)
     var ownerName: String,
@@ -94,7 +92,7 @@ class Notification(
     @Column(nullable = false)
     var oldState: String,
 
-    var newState: String? = "",
+    var newState: String? = null,
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -117,13 +115,13 @@ class Notification(
 
 
 //---------------------------------
-
-@Entity
-@Table(name = "task_event_log")
-data class TaskEventLog(
-    val taskId: Long,
-    val action: String,
-    val timestamp: Long,
-    @Temporal(TemporalType.TIMESTAMP) val createdAt: Date = Date(),
-    var sent: Boolean = false
-): BaseEntity()
+//
+//@Entity
+//@Table(name = "task_event_log")
+//data class TaskEventLog(
+//    val taskId: Long,
+//    val action: String,
+//    val timestamp: Long,
+//    @Temporal(TemporalType.TIMESTAMP) val createdAt: Date = Date(),
+//    var sent: Boolean = false
+//): BaseEntity()

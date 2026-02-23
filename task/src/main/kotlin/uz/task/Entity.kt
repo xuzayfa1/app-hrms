@@ -119,7 +119,6 @@ class TaskAction(
     @Column(columnDefinition = "text")var fileAttach: String? = null,
     var deadline: Date? = null,
 
-//    @Column(columnDefinition = "text") var data: String? = null
 
 
 ):BaseEntity()

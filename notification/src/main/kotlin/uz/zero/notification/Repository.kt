@@ -61,7 +61,7 @@ interface NotificationRepository : BaseRepository<Notification>{
     fun findTop30ByStatusOrderByCreatedDateAsc(status: NotificationStatus): List<Notification>
 
 }
-
-interface TaskEventLogRepository : BaseRepository<TaskEventLog> {
-    fun findAllBySentFalse(): List<TaskEventLog>
-}
+//
+//interface TaskEventLogRepository : BaseRepository<TaskEventLog> {
+//    fun findAllBySentFalse(): List<TaskEventLog>
+//}

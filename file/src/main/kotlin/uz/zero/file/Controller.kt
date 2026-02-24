@@ -16,7 +16,7 @@ class FileController(private val fileService: FileService) {
     @PostMapping("/add")
     fun addOrUpdate(@ModelAttribute filePostDto: FilePostDto) = fileService.upload(filePostDto)
 
-    @GetMapping("{id}")
+    @GetMapping("/media/{id}")
     fun getByHashId(@PathVariable id: String) = fileService.getByHashId(id)
 
     @DeleteMapping("/{id}")

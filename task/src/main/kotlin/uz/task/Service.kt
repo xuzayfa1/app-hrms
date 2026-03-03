@@ -429,7 +429,8 @@ class TaskServiceImpl(
     private val taskActionRepository: TaskActionRepository,
     private val objectMapper: ObjectMapper,
 //    private val taskKafkaProducer: TaskKafkaProducer,
-    private val notifFeignClient: NotifFeignClient
+    private val notifFeignClient: NotifFeignClient,
+    private val fileFeignClient: FileFeignClient
 ) : TaskService {
 
     private fun saveAction(
@@ -461,7 +462,7 @@ class TaskServiceImpl(
         action.createdBy = employeeId()
         taskActionRepository.save(action)
 
-        if (type == TaskActionType.CREATED || onlySave) return
+        if (onlySave) return
 
         val assignees = taskAssigneeRepository.findAssigneeIds(task.id!!)
 
@@ -504,6 +505,13 @@ class TaskServiceImpl(
 
     }
 
+    private fun checkFileAttach(hashIds:List<String>){
+        hashIds.forEach {
+            fileFeignClient.getByHashId(it)
+        }
+
+    }
+
 
     @Transactional
     override fun create(req: CreateTaskRequest): TaskResponseMedia {
@@ -536,6 +544,7 @@ class TaskServiceImpl(
         val saved = taskRepository.save(task)
 
         req.medias?.let {
+            checkFileAttach(req.medias)
             req.medias.forEach {
                 taskMediaRepository.save(
                     TaskMedia(
@@ -555,7 +564,7 @@ class TaskServiceImpl(
             fileAttach = mapOf(
                 "fileHashId" to req.medias
             ),
-            onlySave = true
+            onlySave = false
         )
 
 
@@ -582,6 +591,7 @@ class TaskServiceImpl(
             t.deadline = it
         }
         req.medias?.let {
+            checkFileAttach(req.medias)
             req.medias.forEach {
                 taskMediaRepository.save(
                     TaskMedia(
@@ -841,6 +851,14 @@ class TaskServiceImpl(
             ?: throw AssigneeNotFoundException()
 
         taskAssigneeRepository.trash(assignee.id!!)
+
+        saveAction(
+            task = task,
+            type = TaskActionType.ASSIGNEE_REMOVED,
+            assignee = assignee,
+            from = task.state.name,
+            onlySave = true
+        )
     }
 
 

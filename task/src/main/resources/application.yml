@@ -16,3 +16,13 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+feign:
+  client:
+    config:
+      default:
+        loggerLevel: FULL
+
+logging:
+  level:
+    org.springframework.security: DEBUG

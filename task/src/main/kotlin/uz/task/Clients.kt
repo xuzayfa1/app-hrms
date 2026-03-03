@@ -22,6 +22,13 @@ interface NotifFeignClient {
     fun setNotif(@RequestBody task: TaskEvent)
 }
 
+@FeignClient(name = "file", url = "\${services.hosts.file}",configuration = [FeignOAuth2TokenConfig::class])
+interface FileFeignClient {
+
+    @GetMapping("/media/{id}")
+    fun getByHashId(@PathVariable id: String):FileGetDto
+}
+
 
 
 

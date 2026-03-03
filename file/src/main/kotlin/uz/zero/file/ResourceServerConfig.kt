@@ -27,7 +27,7 @@ class ResourceServerConfig(
             .authorizeHttpRequests {
                 it.requestMatchers("/error").permitAll()
                     .requestMatchers("/actuator/**").permitAll()
-                    .requestMatchers("/file/**").permitAll()
+
             }
             .oauth2ResourceServer { resourceServer ->
                 resourceServer.jwt {

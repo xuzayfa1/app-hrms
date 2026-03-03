@@ -338,7 +338,7 @@ data class ActionResponse(
     val fromState: String? = null,
     val toState: String? = null,
     val title: String? = null,
-    val assignee: TaskAssignee? = null,
+    val assignee: Long? = null,
     val fileAttach: String? = null,
     val deadline: Date? = null,
 ){
@@ -349,10 +349,21 @@ data class ActionResponse(
             fromState = t.fromState,
             toState = t.toState,
             title = t.title,
-            assignee = t.assignee,
+            assignee = t.assignee?.id,
             fileAttach = t.fileAttach,
             deadline = t.deadline,
         )
     }
 }
+
+data class FileGetDto(
+    var id: Long,
+    var hashId: String,
+    var folderPath: String,
+    var filename: String,
+    var type: String,
+    var originalName: String,
+    var size: Long,
+    var orderNumber: Long
+)
 

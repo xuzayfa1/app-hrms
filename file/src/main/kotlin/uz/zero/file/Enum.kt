@@ -11,3 +11,9 @@ enum class Type{
     VIDEO,
     IMAGE,
 }
+
+enum class EmployeeRole {
+    ADMIN,
+    MANAGER,
+    EMPLOYEE
+}
